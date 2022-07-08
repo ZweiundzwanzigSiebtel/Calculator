@@ -1,4 +1,7 @@
 # Calculator
+A powerful calculator for developers.
+It is based on the inbuilt Calculator App on MacOS in "Programmer" Mode.
+I use this tool a lot, but it has its limitations.
 
 ## TODO:
 
