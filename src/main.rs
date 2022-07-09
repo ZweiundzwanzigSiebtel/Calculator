@@ -1,7 +1,7 @@
 use rustyline::error::ReadlineError;
 use rustyline::{Editor, Result};
 
-mod parser;
+mod scanner;
 mod evaluate;
 
 fn main() -> Result<()> {
