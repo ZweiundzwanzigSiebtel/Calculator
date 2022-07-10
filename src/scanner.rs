@@ -1,7 +1,20 @@
+//! 
+//!
+//!
+//! TODO the `advance()` function cals chars().nth(x) every time it gets called.
+//! This leads to multiple iterations per input read.
+//! For short inputs this shouldn't be a problem, but longer input could take a few miliseconds to
+//! read...
+//!
+//!
+//!
+//!
+//!
+
 use phf::phf_map;
 use std::str;
 
-//#[derive(Debug)]
+#[derive(Debug)]
 struct Scanner {
     buffer: String,
     start: usize,
@@ -56,6 +69,7 @@ struct Token {
 }
 
 impl Scanner {
+    /// Creates a new scanner instance 
     fn new(buffer: &str) -> Self {
         Self {
             buffer: buffer.to_string(),
@@ -64,6 +78,11 @@ impl Scanner {
         }
     }
 
+    /// returns the next Token from the buffer the scanner was instantiated with.
+    /// Example:
+    /// let mut sc = Scanner("13 37");
+    /// assert_eq!(sc.next(), Token::new(TokenType::DecimalNumber, 0, 2));
+    /// assert_eq!(sc.next(), Token::new(TokenType::DecimalNumber, 3, 5));
     fn next(&mut self) -> Token {
         self.skip_whitespaces();
         self.start = self.current;
