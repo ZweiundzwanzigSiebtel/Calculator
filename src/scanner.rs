@@ -1,7 +1,6 @@
 use phf::phf_map;
 use std::str;
 
-
 //#[derive(Debug)]
 struct Scanner {
     buffer: String,
@@ -74,23 +73,26 @@ impl Scanner {
         loop {
             match state {
                 State::Start => {
-                    match self.advance() { //TODO: Remove unwrap here...
+                    match self.advance() {
+                        //TODO: Remove unwrap here...
                         Some('(') => {
-                            result_token = Token::new(TokenType::LeftParen, self.start, self.current);
+                            result_token =
+                                Token::new(TokenType::LeftParen, self.start, self.current);
                             break;
-                        },
+                        }
                         Some(')') => {
-                            result_token = Token::new(TokenType::RightParen, self.start, self.current);
+                            result_token =
+                                Token::new(TokenType::RightParen, self.start, self.current);
                             break;
-                        },
+                        }
                         Some('+') => {
                             result_token = Token::new(TokenType::Plus, self.start, self.current);
                             break;
-                        },
+                        }
                         Some('-') => {
                             result_token = Token::new(TokenType::Minus, self.start, self.current);
                             break;
-                        },
+                        }
                         Some('>') => state = State::ExpectShiftRight,
                         Some('<') => state = State::ExpectShiftLeft,
                         Some('0') => state = State::ExpectBase,
@@ -99,134 +101,141 @@ impl Scanner {
                         None => {
                             result_token = Token::new(TokenType::Eof, self.start, self.current);
                             break;
-                        },
-                        _ => {
-                            result_token = Token::new(TokenType::Error, self.start, self.current);
-                            break;
-                        },
-                    }
-                },
-                State::ExpectShiftRight => {
-                    match self.advance() {
-                        Some('>') => {
-                            result_token = Token::new(TokenType::ShiftRight, self.start, self.current);
-                            break;
-                        },
-                        None => {
-                            result_token = Token::new(TokenType::Eof, self.start, self.current);
-                            break;
-                        },
-                        _ => {
-                            result_token = Token::new(TokenType::Error, self.start, self.current);
-                            break;
-                        },
-                    }
-                },
-                State::ExpectShiftLeft => {
-                    match self.advance() {
-                        Some('<') => {
-                            result_token = Token::new(TokenType::ShiftLeft, self.start, self.current);
-                            break;
-                        },
-                        None => {
-                            result_token = Token::new(TokenType::Eof, self.start, self.current);
-                            break;
-                        },
-                        _ => {
-                            result_token = Token::new(TokenType::Error, self.start, self.current);
-                            break;
-                        },
-                    }
-                },
-                State::Keyword => {
-                    match self.advance() {
-                        Some('a'..='z' | 'A'..='Z') => {},
-                        Some(ch) if ch.is_whitespace() => {
-                            self.current -= 1;
-                            let keyword_type = self.get_keyword();
-                            result_token = Token::new(keyword_type, self.start, self.current);
-                            break;
-                        },
-                        None => {
-                            self.current -= 1;
-                            let keyword_type = self.get_keyword();
-                            result_token = Token::new(keyword_type, self.start, self.current);
-                            break;
                         }
                         _ => {
                             result_token = Token::new(TokenType::Error, self.start, self.current);
                             break;
-                        },
-                    }
-                },
-                State::ExpectBase => {
-                    match self.advance() {
-                        Some('b') => state = State::BinaryNumber,
-                        Some('x') => state = State::HexNumber,
-                        _ => {
-                            result_token = Token::new(TokenType::Error, self.start, self.current);
-                            break;
-                        },
-                    }
-
-                },
-                State::DecimalNumber => {
-                    match self.advance() {
-                        Some('0'..='9') => state = State::DecimalNumber,
-                        Some(ch) if ch.is_whitespace() || ch == ')' || ch =='(' || ch == '>' || ch == '<' => {
-                            self.current -= 1;
-                            result_token = Token::new(TokenType::DecimalNumber, self.start, self.current);
-                            break;
-                        },
-                        None => {
-                            self.current -= 1;
-                            result_token = Token::new(TokenType::DecimalNumber, self.start, self.current);
-                            break;
                         }
-                        _ => {
-                            result_token = Token::new(TokenType::Error, self.start, self.current);
-                            break;
-                        },
-                    }
-                },
-                State::BinaryNumber => {
-                    match self.advance() {
-                        Some('0'..='1') => state = State::BinaryNumber,
-                        Some(ch) if ch.is_whitespace() || ch == ')' || ch =='(' || ch == '>' || ch == '<' => {
-                            self.current -= 1;
-                            result_token = Token::new(TokenType::BinaryNumber, self.start, self.current);
-                            break;
-                        },
-                        None => {
-                            self.current -= 1;
-                            result_token = Token::new(TokenType::BinaryNumber, self.start, self.current);
-                            break;
-                        }
-                        _ => {
-                            result_token = Token::new(TokenType::Error, self.start, self.current);
-                            break;
-                        },
-                    }
-                },
-                State::HexNumber => {
-                    match self.advance() {
-                        Some('0'..='9' | 'a'..='f' | 'A'..='F') => state = State::HexNumber,
-                        Some(ch) if ch.is_whitespace() || ch == ')' || ch =='(' || ch == '>' || ch == '<' => {
-                            self.current -= 1;
-                            result_token = Token::new(TokenType::HexNumber, self.start, self.current);
-                            break;
-                        },
-                        None => {
-                            self.current -= 1;
-                            result_token = Token::new(TokenType::HexNumber, self.start, self.current);
-                            break;
-                        }
-                        _ => {
-                            result_token = Token::new(TokenType::Error, self.start, self.current);
-                            break;
-                        },
                     }
                 }
+                State::ExpectShiftRight => match self.advance() {
+                    Some('>') => {
+                        result_token = Token::new(TokenType::ShiftRight, self.start, self.current);
+                        break;
+                    }
+                    None => {
+                        result_token = Token::new(TokenType::Eof, self.start, self.current);
+                        break;
+                    }
+                    _ => {
+                        result_token = Token::new(TokenType::Error, self.start, self.current);
+                        break;
+                    }
+                },
+                State::ExpectShiftLeft => match self.advance() {
+                    Some('<') => {
+                        result_token = Token::new(TokenType::ShiftLeft, self.start, self.current);
+                        break;
+                    }
+                    None => {
+                        result_token = Token::new(TokenType::Eof, self.start, self.current);
+                        break;
+                    }
+                    _ => {
+                        result_token = Token::new(TokenType::Error, self.start, self.current);
+                        break;
+                    }
+                },
+                State::Keyword => match self.advance() {
+                    Some('a'..='z' | 'A'..='Z') => {}
+                    Some(ch) if ch.is_whitespace() => {
+                        self.current -= 1;
+                        let keyword_type = self.get_keyword();
+                        result_token = Token::new(keyword_type, self.start, self.current);
+                        break;
+                    }
+                    None => {
+                        self.current -= 1;
+                        let keyword_type = self.get_keyword();
+                        result_token = Token::new(keyword_type, self.start, self.current);
+                        break;
+                    }
+                    _ => {
+                        result_token = Token::new(TokenType::Error, self.start, self.current);
+                        break;
+                    }
+                },
+                State::ExpectBase => match self.advance() {
+                    Some('b') => state = State::BinaryNumber,
+                    Some('x') => state = State::HexNumber,
+                    _ => {
+                        result_token = Token::new(TokenType::Error, self.start, self.current);
+                        break;
+                    }
+                },
+                State::DecimalNumber => match self.advance() {
+                    Some('0'..='9') => state = State::DecimalNumber,
+                    Some(ch)
+                        if ch.is_whitespace()
+                            || ch == ')'
+                            || ch == '('
+                            || ch == '>'
+                            || ch == '<' =>
+                    {
+                        self.current -= 1;
+                        result_token =
+                            Token::new(TokenType::DecimalNumber, self.start, self.current);
+                        break;
+                    }
+                    None => {
+                        self.current -= 1;
+                        result_token =
+                            Token::new(TokenType::DecimalNumber, self.start, self.current);
+                        break;
+                    }
+                    _ => {
+                        result_token = Token::new(TokenType::Error, self.start, self.current);
+                        break;
+                    }
+                },
+                State::BinaryNumber => match self.advance() {
+                    Some('0'..='1') => state = State::BinaryNumber,
+                    Some(ch)
+                        if ch.is_whitespace()
+                            || ch == ')'
+                            || ch == '('
+                            || ch == '>'
+                            || ch == '<' =>
+                    {
+                        self.current -= 1;
+                        result_token =
+                            Token::new(TokenType::BinaryNumber, self.start, self.current);
+                        break;
+                    }
+                    None => {
+                        self.current -= 1;
+                        result_token =
+                            Token::new(TokenType::BinaryNumber, self.start, self.current);
+                        break;
+                    }
+                    _ => {
+                        result_token = Token::new(TokenType::Error, self.start, self.current);
+                        break;
+                    }
+                },
+                State::HexNumber => match self.advance() {
+                    Some('0'..='9' | 'a'..='f' | 'A'..='F') => state = State::HexNumber,
+                    Some(ch)
+                        if ch.is_whitespace()
+                            || ch == ')'
+                            || ch == '('
+                            || ch == '>'
+                            || ch == '<' =>
+                    {
+                        self.current -= 1;
+                        result_token = Token::new(TokenType::HexNumber, self.start, self.current);
+                        break;
+                    }
+                    None => {
+                        self.current -= 1;
+                        result_token = Token::new(TokenType::HexNumber, self.start, self.current);
+                        break;
+                    }
+                    _ => {
+                        result_token = Token::new(TokenType::Error, self.start, self.current);
+                        break;
+                    }
+                },
             }
         }
         result_token
@@ -239,7 +248,13 @@ impl Scanner {
     }
 
     fn skip_whitespaces(&mut self) {
-        while self.buffer.chars().nth(self.current).unwrap().is_whitespace() {
+        while self
+            .buffer
+            .chars()
+            .nth(self.current)
+            .unwrap()
+            .is_whitespace()
+        {
             self.current += 1;
         }
     }
@@ -255,7 +270,10 @@ impl Scanner {
             "xor" => TokenType::Xor,
             "XOR" => TokenType::Xor,
         };
-        if let Some(typ) = KEYWORDS.get(self.buffer.get_mut(self.start..self.current).unwrap()).cloned() {
+        if let Some(typ) = KEYWORDS
+            .get(self.buffer.get_mut(self.start..self.current).unwrap())
+            .cloned()
+        {
             typ
         } else {
             TokenType::Error
@@ -344,7 +362,10 @@ mod tests {
         assert_eq!(sc.next(), Token::new(TokenType::RightParen, 1, 2));
         assert_eq!(sc.next(), Token::new(TokenType::HexNumber, 2, 8));
         assert_eq!(sc.next(), Token::new(TokenType::ShiftLeft, 9, 11));
-        assert_eq!(sc.next(), Token::new(TokenType::DecimalNumber, 12, input.len()));
+        assert_eq!(
+            sc.next(),
+            Token::new(TokenType::DecimalNumber, 12, input.len())
+        );
     }
 
     #[test]
@@ -363,6 +384,9 @@ mod tests {
         assert_eq!(sc.next(), Token::new(TokenType::BinaryNumber, 26, 30));
         assert_eq!(sc.next(), Token::new(TokenType::RightParen, 30, 31));
         assert_eq!(sc.next(), Token::new(TokenType::ShiftLeft, 32, 34));
-        assert_eq!(sc.next(), Token::new(TokenType::DecimalNumber, 35, input.len()));
+        assert_eq!(
+            sc.next(),
+            Token::new(TokenType::DecimalNumber, 35, input.len())
+        );
     }
 }
