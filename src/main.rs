@@ -2,7 +2,7 @@ use rustyline::error::ReadlineError;
 use rustyline::{Editor, Result};
 
 mod scanner;
-mod evaluate;
+mod vm;
 
 fn main() -> Result<()> {
     // `()` can be used when no completer is required
