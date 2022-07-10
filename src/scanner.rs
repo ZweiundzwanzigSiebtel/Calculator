@@ -1,3 +1,6 @@
+use phf::phf_map;
+use std::str;
+
 
 //#[derive(Debug)]
 struct Scanner {
@@ -6,7 +9,7 @@ struct Scanner {
     current: usize,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 enum TokenType {
     //single-character Tokens
     LeftParen,
@@ -34,6 +37,18 @@ enum TokenType {
     NotImplemented,
 }
 
+#[derive(Debug)]
+enum State {
+    Start,
+    ExpectShiftLeft,
+    ExpectShiftRight,
+    Keyword,
+    ExpectBase,
+    BinaryNumber,
+    HexNumber,
+    DecimalNumber,
+}
+
 #[derive(Debug, PartialEq)]
 struct Token {
     typ: TokenType,
@@ -55,89 +70,122 @@ impl Scanner {
         self.skip_whitespaces();
         self.start = self.current;
 
-        let iter = self.buffer.chars();
-        let mut iter = iter.skip(self.current);
+        let mut result_token = Token::new(TokenType::Error, self.start, self.current);
+        let mut state = State::Start;
+        loop {
+            match state {
+                State::Start => {
+                    match self.advance() { //TODO: Remove unwrap here...
+                        Some('(') => result_token = Token::new(TokenType::LeftParen, self.start, self.current),
+                        Some(')') => result_token = Token::new(TokenType::RightParen, self.start, self.current),
+                        Some('+') => result_token = Token::new(TokenType::Plus, self.start, self.current),
+                        Some('-') => result_token = Token::new(TokenType::Minus, self.start, self.current),
+                        Some('>') => state = State::ExpectShiftRight,
+                        Some('<') => state = State::ExpectShiftLeft,
+                        Some('0') => state = State::ExpectBase,
+                        Some('1'..='9') => state = State::DecimalNumber,
+                        Some('a'..='z' | 'A'..='Z') => state = State::Keyword,
+                        None => result_token = Token::new(TokenType::Eof, self.start, self.current),
+                        _ => result_token = Token::new(TokenType::Error, self.start, self.current),
+                    }
+                },
+                State::ExpectShiftRight => {
+                    match self.advance() {
+                        Some('>') => result_token = Token::new(TokenType::ShiftRight, self.start, self.current),
+                        None => result_token = Token::new(TokenType::Eof, self.start, self.current),
+                        _ => result_token = Token::new(TokenType::Error, self.start, self.current),
+                    }
+                },
+                State::ExpectShiftLeft => {
+                    match self.advance() {
+                        Some('<') => result_token = Token::new(TokenType::ShiftRight, self.start, self.current),
+                        None => result_token = Token::new(TokenType::Eof, self.start, self.current),
+                        _ => result_token = Token::new(TokenType::Error, self.start, self.current),
+                    }
+                },
+                State::Keyword => {
+                    match self.advance() {
+                        Some('a'..='z' | 'A'..='Z') => state = State::Keyword,
+                        //TODO handle whitespace
+                        //None => TODO read one char to much, lookup keyword,
+                        _ => result_token = Token::new(TokenType::Error, self.start, self.current),
+                    }
+                },
+                State::ExpectBase => {
+                    match self.advance() {
+                        Some('b') => state = State::BinaryNumber,
+                        Some('x') => state = State::HexNumber,
+                        _ => result_token = Token::new(TokenType::Error, self.start, self.current),
+                    }
 
-        self.current += 1;
-        match iter.next() { //TODO: Remove unwrap here...
-            Some('(') => Token::new(TokenType::LeftParen, self.start, self.current),
-            Some(')') => Token::new(TokenType::RightParen, self.start, self.current),
-            Some('+') => Token::new(TokenType::Plus, self.start, self.current),
-            Some('-') => Token::new(TokenType::Minus, self.start, self.current),
-            Some('<') => {
-                self.current += 1;
-                match iter.next() {
-                    Some('<') => Token::new(TokenType::ShiftLeft, self.start, self.current),
-                    _ => Token::new(TokenType::Error, self.start, self.current),
-                }
-            },
-            Some('>') => {
-                self.current += 1;
-                match iter.next() {
-                    Some('>') => Token::new(TokenType::ShiftRight, self.start, self.current),
-                    _ => Token::new(TokenType::Error, self.start, self.current),
-                }
-            },
-            Some('0') => {
-                self.current += 1;
-                match iter.next() {
-                    Some('b') => self.handle_numbers(TokenType::BinaryNumber),
-                    Some('x') => self.handle_numbers(TokenType::HexNumber),
-                    _ => panic!("should not happen"),
+                },
+                State::DecimalNumber => {
+                    match self.advance() {
+                        Some('0'..='9') => state = State::DecimalNumber,
+                        //TODO if whitespace or None finish token 
+                        _ => result_token = Token::new(TokenType::Error, self.start, self.current),
+                    }
+                },
+                State::BinaryNumber => {
+                    match self.advance() {
+                        Some('0' | '1') => state = State::BinaryNumber,
+                        //TODO: whitespace/None detection
+                        _ => result_token = Token::new(TokenType::Error, self.start, self.current),
+                    }
+                },
+                State::HexNumber => {
+                    match self.advance() {
+                        Some('0'..='9' | 'a'..='f' | 'A'..='F') => state = State::HexNumber,
+                        //TODO whitespace/None detection
+                        _ => result_token = Token::new(TokenType::Error, self.start, self.current),
+                    }
                 }
             }
-            Some('a'..='z' | 'A'..='Z') => self.handle_keyword(),
-            Some('1'..='9') => self.handle_numbers(TokenType::DecimalNumber),
-            _ => Token::new(TokenType::NotImplemented, self.start, self.current),
         }
+        result_token
+    }
+
+    fn advance(&mut self) -> Option<char> {
+        let temp = self.current;
+        self.current += 1;
+        self.buffer.chars().nth(temp)
+    }
+
+    fn peek(&mut self) -> Option<char> {
+        let temp = self.current;
+        self.current += 1;
+        self.buffer.chars().nth(temp)
     }
 
     fn skip_whitespaces(&mut self) {
-        while let Some(possible_whitespace) = self.buffer.chars().nth(self.current) {
-            if possible_whitespace.is_whitespace() {
+        while self.buffer.chars().nth(self.current).unwrap().is_whitespace() {
+            self.current += 1;
+        }
+    }
+
+    fn get_keyword(&mut self) -> Token {
+        static KEYWORDS: phf::Map<&'static str, TokenType> = phf_map! {
+            "and" => TokenType::And,
+            "AND" => TokenType::And,
+            "or" => TokenType::Or,
+            "OR" => TokenType::Or,
+            "nor" => TokenType::Nor,
+            "NOR" => TokenType::Nor,
+            "xor" => TokenType::Xor,
+            "XOR" => TokenType::Xor,
+        };
+        while let Some(ch) = self.buffer.chars().nth(self.current) {
+            if ch.is_alphabetic() {
                 self.current += 1;
             } else {
                 break;
             }
         }
-    }
-
-    fn handle_numbers(&mut self, typ: TokenType) -> Token {
-        self.current += 1;
-        println!("self_current is now: {:?}", self.buffer.chars().nth(self.current));
-        while let Some(number) = self.buffer.chars().nth(self.current) {
-            match typ {
-                TokenType::BinaryNumber => {
-                    match number {
-                        '0'..='1' => self.current += 1,
-                        _ => break,
-                    }
-                }
-                TokenType::DecimalNumber => {
-                    match number {
-                        '0'..='9' | 'a'..='f' | 'A'..='F' => self.current += 1,
-                        _ => break,
-                    }
-                },
-                TokenType::HexNumber => {
-                    match number {
-                        '0'..='9' | 'a'..='f' | 'A'..='F' => self.current += 1,
-                        _ => break,
-                    }
-                },
-                _ => panic!("should never be another type except bin, dec or hex!"),
-            }
+        if let Some(typ) = KEYWORDS.get(self.buffer.get_mut(self.start..self.current).unwrap()).cloned() {
+            Token::new(typ, self.start, self.current)
+        } else {
+            Token::new(TokenType::Error, self.start, self.current)
         }
-        Token::new(typ, self.start, self.current)
-    }
-
-    fn handle_keyword(&mut self) -> Token {
-        let iter = self.buffer.chars();
-        let mut iter = iter.skip(self.current);
-        while let Some(value) = iter.next() {
-            self.current += 1;
-        }
-        Token::new(TokenType::Error, self.start, self.current)
     }
 }
 
@@ -169,9 +217,9 @@ mod tests {
     }
 
     #[test]
-    fn test_shift_left() {
-        let mut sc = Scanner::new(" <<");
-        assert_eq!(sc.next(), Token::new(TokenType::ShiftLeft, 1, 3));
+    fn test_shift_right() {
+        let mut sc = Scanner::new(" >>");
+        assert_eq!(sc.next(), Token::new(TokenType::ShiftRight, 1, 3));
     }
 
     #[test]
@@ -201,20 +249,40 @@ mod tests {
         assert_eq!(sc.next(), Token::new(TokenType::BinaryNumber, 0, 6));
     }
 
-//    #[test]
-//    fn test_xor_keyword() {
-//        let mut sc = Scanner::new("XOR");
-//        sc.next();
-//    }
-//
-//    #[test]
-//    fn test_complete() {
-//        let input = "()0x1234 << 10";
-//        let mut sc = Scanner::new(input);
-//        assert_eq!(sc.next(), Token::new(TokenType::LeftParen, 0, 1));
-//        assert_eq!(sc.next(), Token::new(TokenType::RightParen, 1, 2));
-//        assert_eq!(sc.next(), Token::new(TokenType::HexNumber, 2, 8));
-//        assert_eq!(sc.next(), Token::new(TokenType::ShiftLeft, 9, 11));
-//        assert_eq!(sc.next(), Token::new(TokenType::DecimalNumber, 12, input.len()));
-//    }
+    #[test]
+    fn test_xor_keyword() {
+        let mut sc = Scanner::new("XOR");
+        assert_eq!(sc.next(), Token::new(TokenType::Xor, 0, 3));
+    }
+
+    #[test]
+    fn test_complete() {
+        let input = "()0x1234 << 10";
+        let mut sc = Scanner::new(input);
+        assert_eq!(sc.next(), Token::new(TokenType::LeftParen, 0, 1));
+        assert_eq!(sc.next(), Token::new(TokenType::RightParen, 1, 2));
+        assert_eq!(sc.next(), Token::new(TokenType::HexNumber, 2, 8));
+        assert_eq!(sc.next(), Token::new(TokenType::ShiftLeft, 9, 11));
+        assert_eq!(sc.next(), Token::new(TokenType::DecimalNumber, 12, input.len()));
+    }
+
+    #[test]
+    fn test_extended() {
+        let input = "(0b1010 + 0xFF) and (2 OR 0b10) << 12";
+        let mut sc = Scanner::new(input);
+        assert_eq!(sc.next(), Token::new(TokenType::LeftParen, 0, 1));
+        println!("input len >>> {:?}", input.len());
+        assert_eq!(sc.next(), Token::new(TokenType::BinaryNumber, 1, 7));
+        assert_eq!(sc.next(), Token::new(TokenType::Plus, 8, 9));
+        assert_eq!(sc.next(), Token::new(TokenType::HexNumber, 10, 14));
+        assert_eq!(sc.next(), Token::new(TokenType::RightParen, 14, 15));
+        assert_eq!(sc.next(), Token::new(TokenType::And, 16, 19));
+        assert_eq!(sc.next(), Token::new(TokenType::LeftParen, 20, 21));
+        assert_eq!(sc.next(), Token::new(TokenType::DecimalNumber, 21, input.len()));
+        assert_eq!(sc.next(), Token::new(TokenType::Or, 24, 25));
+        assert_eq!(sc.next(), Token::new(TokenType::BinaryNumber, 26, 30));
+        assert_eq!(sc.next(), Token::new(TokenType::RightParen, 30, 31));
+        assert_eq!(sc.next(), Token::new(TokenType::ShiftLeft, 32, 34));
+        assert_eq!(sc.next(), Token::new(TokenType::LeftParen, 35, input.len()));
+    }
 }
