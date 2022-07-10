@@ -74,7 +74,6 @@ impl Scanner {
             match state {
                 State::Start => {
                     match self.advance() {
-                        //TODO: Remove unwrap here...
                         Some('(') => {
                             result_token =
                                 Token::new(TokenType::LeftParen, self.start, self.current);
@@ -248,14 +247,12 @@ impl Scanner {
     }
 
     fn skip_whitespaces(&mut self) {
-        while self
-            .buffer
-            .chars()
-            .nth(self.current)
-            .unwrap()
-            .is_whitespace()
-        {
-            self.current += 1;
+        while let Some(ch) = self.buffer.chars().nth(self.current) {
+            if ch.is_whitespace() {
+                self.current += 1;
+            } else {
+                break;
+            }
         }
     }
 
@@ -300,6 +297,12 @@ mod tests {
         let mut sc = Scanner::new("    >");
         sc.skip_whitespaces();
         assert_eq!(sc.current, 4);
+    }
+
+    #[test]
+    fn test_whitespaces_only() {
+        let mut sc = Scanner::new("  ");
+        assert_eq!(sc.next(), Token::new(TokenType::Eof, 2, 3));
     }
 
     #[test]
