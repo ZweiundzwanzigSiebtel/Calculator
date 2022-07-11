@@ -14,8 +14,8 @@ fn main() -> Result<()> {
 
     let mut sc = Scanner::new(&file_content);
     let start = std::time::Instant::now();
-    while let Some(_token) = sc.next() {
-        //println!("{:?}", &token);
+    while let Some(token) = sc.next() {
+        println!("{:?}", &token);
     }
     println!("finished in: {:?}", start.elapsed());
 
