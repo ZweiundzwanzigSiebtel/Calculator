@@ -122,9 +122,6 @@ impl<'a> Scanner<'a> {
                     Some('1'..='9') => state = State::DecimalNumber,
                     Some('a'..='z' | 'A'..='Z') => state = State::Keyword,
                     None => {
-//                        let start = self.initial_len - token_start;
-//                        let token_len = self.initial_len - self.buffer.as_str().len();
-//                        result_token = Some(Token::new(TokenType::Eof, start, token_len));
                         return None;
                     }
                     _ => {
@@ -141,12 +138,12 @@ impl<'a> Scanner<'a> {
                         result_token = Some(Token::new(TokenType::ShiftRight, start, token_len));
                         break;
                     }
-//                    None => {
-//                        let start = self.initial_len - token_start;
-//                        let token_len = self.initial_len - self.buffer.as_str().len();
-//                        result_token = Some(Token::new(TokenType::ShiftRight, start, token_len));
-//                        break;
-//                    }
+                    None => {
+                        let start = self.initial_len - token_start;
+                        let token_len = self.initial_len - self.buffer.as_str().len();
+                        result_token = Some(Token::new(TokenType::ShiftRight, start, token_len));
+                        break;
+                    }
                     _ => {
                         let start = self.initial_len - token_start;
                         let token_len = self.initial_len - self.buffer.as_str().len();
@@ -161,12 +158,12 @@ impl<'a> Scanner<'a> {
                         result_token = Some(Token::new(TokenType::ShiftLeft, start, token_len));
                         break;
                     }
-//                    None => {
-//                        let start = self.initial_len - token_start;
-//                        let token_len = self.initial_len - self.buffer.as_str().len();
-//                        result_token = Some(Token::new(TokenType::ShiftLeft, start, token_len));
-//                        break;
-//                    }
+                    None => {
+                        let start = self.initial_len - token_start;
+                        let token_len = self.initial_len - self.buffer.as_str().len();
+                        result_token = Some(Token::new(TokenType::ShiftLeft, start, token_len));
+                        break;
+                    }
                     _ => {
                         let start = self.initial_len - token_start;
                         let token_len = self.initial_len - self.buffer.as_str().len();
