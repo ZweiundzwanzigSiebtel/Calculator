@@ -331,7 +331,7 @@ mod tests {
     #[test]
     fn test_whitespaces_only() {
         let mut sc = Scanner::new("  ");
-        assert_eq!(sc.next().unwrap(), Token::new(TokenType::Eof, 2, 2));
+        assert_eq!(sc.next(), None);
     }
 
     #[test]
