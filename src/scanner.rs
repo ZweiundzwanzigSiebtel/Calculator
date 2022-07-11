@@ -23,7 +23,7 @@ pub struct Scanner<'a> {
 const EOF_CHAR: char = '\0';
 
 #[derive(Debug, PartialEq, Clone)]
-enum TokenType {
+pub enum TokenType {
     //single-character Tokens
     LeftParen,
     RightParen,
@@ -85,7 +85,7 @@ impl<'a> Scanner<'a> {
     /// assert_eq!(sc.next(), Token::new(TokenType::DecimalNumber, 3, 5));```
     pub fn next(&mut self) -> Option<Token> {
         self.eat_while(char::is_whitespace);
-        let mut result_token = None;
+        let mut result_token;
         let mut state = State::Start;
 
         let token_start = self.buffer.as_str().len();
