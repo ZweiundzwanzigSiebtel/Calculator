@@ -4,8 +4,22 @@ use rustyline::{Editor, Result};
 mod scanner;
 mod vm;
 
+use scanner::Scanner;
+
 fn main() -> Result<()> {
-    // `()` can be used when no completer is required
+
+    let args: Vec<_> = std::env::args().collect();
+    let file_name = args.get(1).unwrap();
+    let file_content = std::fs::read_to_string(file_name).unwrap();
+
+    let mut sc = Scanner::new(&file_content);
+    let start = std::time::Instant::now();
+    while let Some(_token) = sc.next() {
+        //println!("{:?}", &token);
+    }
+    println!("finished in: {:?}", start.elapsed());
+
+    // `()` can be used when n,o completer is required
     let mut rl = Editor::<()>::new();
     if rl.load_history("history.txt").is_err() {
         println!("No previous history.");

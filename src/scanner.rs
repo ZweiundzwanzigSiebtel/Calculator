@@ -15,7 +15,7 @@ use phf::phf_map;
 use std::str;
 
 #[derive(Debug)]
-struct Scanner {
+pub struct Scanner {
     buffer: String,
     start: usize,
     current: usize,
@@ -46,7 +46,6 @@ enum TokenType {
 
     Error,
     Eof,
-    NotImplemented,
 }
 
 #[derive(Debug)]
@@ -62,7 +61,7 @@ enum State {
 }
 
 #[derive(Debug, PartialEq)]
-struct Token {
+pub struct Token {
     typ: TokenType,
     start: usize,
     length: usize,
@@ -70,7 +69,7 @@ struct Token {
 
 impl Scanner {
     /// Creates a new scanner instance 
-    fn new(buffer: &str) -> Self {
+    pub fn new(buffer: &str) -> Self {
         Self {
             buffer: buffer.to_string(),
             start: 0,
@@ -83,11 +82,11 @@ impl Scanner {
     /// let mut sc = Scanner("13 37");
     /// assert_eq!(sc.next(), Token::new(TokenType::DecimalNumber, 0, 2));
     /// assert_eq!(sc.next(), Token::new(TokenType::DecimalNumber, 3, 5));
-    fn next(&mut self) -> Token {
+    pub fn next(&mut self) -> Option<Token> {
         self.skip_whitespaces();
         self.start = self.current;
 
-        let mut result_token = Token::new(TokenType::Error, self.start, self.current);
+        let mut result_token = None;
         let mut state = State::Start;
         loop {
             match state {
@@ -95,20 +94,20 @@ impl Scanner {
                     match self.advance() {
                         Some('(') => {
                             result_token =
-                                Token::new(TokenType::LeftParen, self.start, self.current);
+                                Some(Token::new(TokenType::LeftParen, self.start, self.current));
                             break;
                         }
                         Some(')') => {
                             result_token =
-                                Token::new(TokenType::RightParen, self.start, self.current);
+                                Some(Token::new(TokenType::RightParen, self.start, self.current));
                             break;
                         }
                         Some('+') => {
-                            result_token = Token::new(TokenType::Plus, self.start, self.current);
+                            result_token = Some(Token::new(TokenType::Plus, self.start, self.current));
                             break;
                         }
                         Some('-') => {
-                            result_token = Token::new(TokenType::Minus, self.start, self.current);
+                            result_token = Some(Token::new(TokenType::Minus, self.start, self.current));
                             break;
                         }
                         Some('>') => state = State::ExpectShiftRight,
@@ -117,40 +116,39 @@ impl Scanner {
                         Some('1'..='9') => state = State::DecimalNumber,
                         Some('a'..='z' | 'A'..='Z') => state = State::Keyword,
                         None => {
-                            result_token = Token::new(TokenType::Eof, self.start, self.current);
                             break;
                         }
                         _ => {
-                            result_token = Token::new(TokenType::Error, self.start, self.current);
+                            result_token = Some(Token::new(TokenType::Error, self.start, self.current));
                             break;
                         }
                     }
                 }
                 State::ExpectShiftRight => match self.advance() {
                     Some('>') => {
-                        result_token = Token::new(TokenType::ShiftRight, self.start, self.current);
+                        result_token = Some(Token::new(TokenType::ShiftRight, self.start, self.current));
                         break;
                     }
                     None => {
-                        result_token = Token::new(TokenType::Eof, self.start, self.current);
+                        result_token = Some(Token::new(TokenType::Eof, self.start, self.current));
                         break;
                     }
                     _ => {
-                        result_token = Token::new(TokenType::Error, self.start, self.current);
+                        result_token = Some(Token::new(TokenType::Error, self.start, self.current));
                         break;
                     }
                 },
                 State::ExpectShiftLeft => match self.advance() {
                     Some('<') => {
-                        result_token = Token::new(TokenType::ShiftLeft, self.start, self.current);
+                        result_token = Some(Token::new(TokenType::ShiftLeft, self.start, self.current));
                         break;
                     }
                     None => {
-                        result_token = Token::new(TokenType::Eof, self.start, self.current);
+                        result_token = Some(Token::new(TokenType::Eof, self.start, self.current));
                         break;
                     }
                     _ => {
-                        result_token = Token::new(TokenType::Error, self.start, self.current);
+                        result_token = Some(Token::new(TokenType::Error, self.start, self.current));
                         break;
                     }
                 },
@@ -159,17 +157,17 @@ impl Scanner {
                     Some(ch) if ch.is_whitespace() => {
                         self.current -= 1;
                         let keyword_type = self.get_keyword();
-                        result_token = Token::new(keyword_type, self.start, self.current);
+                        result_token = Some(Token::new(keyword_type, self.start, self.current));
                         break;
                     }
                     None => {
                         self.current -= 1;
                         let keyword_type = self.get_keyword();
-                        result_token = Token::new(keyword_type, self.start, self.current);
+                        result_token = Some(Token::new(keyword_type, self.start, self.current));
                         break;
                     }
                     _ => {
-                        result_token = Token::new(TokenType::Error, self.start, self.current);
+                        result_token = Some(Token::new(TokenType::Error, self.start, self.current));
                         break;
                     }
                 },
@@ -177,7 +175,7 @@ impl Scanner {
                     Some('b') => state = State::BinaryNumber,
                     Some('x') => state = State::HexNumber,
                     _ => {
-                        result_token = Token::new(TokenType::Error, self.start, self.current);
+                        result_token = Some(Token::new(TokenType::Error, self.start, self.current));
                         break;
                     }
                 },
@@ -192,17 +190,17 @@ impl Scanner {
                     {
                         self.current -= 1;
                         result_token =
-                            Token::new(TokenType::DecimalNumber, self.start, self.current);
+                            Some(Token::new(TokenType::DecimalNumber, self.start, self.current));
                         break;
                     }
                     None => {
                         self.current -= 1;
                         result_token =
-                            Token::new(TokenType::DecimalNumber, self.start, self.current);
+                            Some(Token::new(TokenType::DecimalNumber, self.start, self.current));
                         break;
                     }
                     _ => {
-                        result_token = Token::new(TokenType::Error, self.start, self.current);
+                        result_token = Some(Token::new(TokenType::Error, self.start, self.current));
                         break;
                     }
                 },
@@ -217,17 +215,17 @@ impl Scanner {
                     {
                         self.current -= 1;
                         result_token =
-                            Token::new(TokenType::BinaryNumber, self.start, self.current);
+                            Some(Token::new(TokenType::BinaryNumber, self.start, self.current));
                         break;
                     }
                     None => {
                         self.current -= 1;
                         result_token =
-                            Token::new(TokenType::BinaryNumber, self.start, self.current);
+                            Some(Token::new(TokenType::BinaryNumber, self.start, self.current));
                         break;
                     }
                     _ => {
-                        result_token = Token::new(TokenType::Error, self.start, self.current);
+                        result_token = Some(Token::new(TokenType::Error, self.start, self.current));
                         break;
                     }
                 },
@@ -241,16 +239,16 @@ impl Scanner {
                             || ch == '<' =>
                     {
                         self.current -= 1;
-                        result_token = Token::new(TokenType::HexNumber, self.start, self.current);
+                        result_token = Some(Token::new(TokenType::HexNumber, self.start, self.current));
                         break;
                     }
                     None => {
                         self.current -= 1;
-                        result_token = Token::new(TokenType::HexNumber, self.start, self.current);
+                        result_token = Some(Token::new(TokenType::HexNumber, self.start, self.current));
                         break;
                     }
                     _ => {
-                        result_token = Token::new(TokenType::Error, self.start, self.current);
+                        result_token = Some(Token::new(TokenType::Error, self.start, self.current));
                         break;
                     }
                 },
@@ -321,71 +319,71 @@ mod tests {
     #[test]
     fn test_whitespaces_only() {
         let mut sc = Scanner::new("  ");
-        assert_eq!(sc.next(), Token::new(TokenType::Eof, 2, 3));
+        assert_eq!(sc.next().unwrap(), Token::new(TokenType::Eof, 2, 3));
     }
 
     #[test]
     fn test_single_character_token() {
         let mut sc = Scanner::new("(");
-        assert_eq!(sc.next(), Token::new(TokenType::LeftParen, 0, 1));
+        assert_eq!(sc.next().unwrap(), Token::new(TokenType::LeftParen, 0, 1));
     }
 
     #[test]
     fn test_shift_right() {
         let mut sc = Scanner::new(" >>");
-        assert_eq!(sc.next(), Token::new(TokenType::ShiftRight, 1, 3));
+        assert_eq!(sc.next().unwrap(), Token::new(TokenType::ShiftRight, 1, 3));
     }
 
     #[test]
     fn test_few_parens() {
         let mut sc = Scanner::new("()()");
-        assert_eq!(sc.next(), Token::new(TokenType::LeftParen, 0, 1));
-        assert_eq!(sc.next(), Token::new(TokenType::RightParen, 1, 2));
-        assert_eq!(sc.next(), Token::new(TokenType::LeftParen, 2, 3));
-        assert_eq!(sc.next(), Token::new(TokenType::RightParen, 3, 4));
+        assert_eq!(sc.next().unwrap(), Token::new(TokenType::LeftParen, 0, 1));
+        assert_eq!(sc.next().unwrap(), Token::new(TokenType::RightParen, 1, 2));
+        assert_eq!(sc.next().unwrap(), Token::new(TokenType::LeftParen, 2, 3));
+        assert_eq!(sc.next().unwrap(), Token::new(TokenType::RightParen, 3, 4));
     }
 
     #[test]
     fn test_dec_number() {
         let mut sc = Scanner::new("1234");
-        assert_eq!(sc.next(), Token::new(TokenType::DecimalNumber, 0, 4));
+        assert_eq!(sc.next().unwrap(), Token::new(TokenType::DecimalNumber, 0, 4));
     }
 
     #[test]
     fn test_hex_number() {
         let mut sc = Scanner::new("0x1234");
-        assert_eq!(sc.next(), Token::new(TokenType::HexNumber, 0, 6));
+        assert_eq!(sc.next().unwrap(), Token::new(TokenType::HexNumber, 0, 6));
     }
 
     #[test]
     fn test_bin_number() {
         let mut sc = Scanner::new("0b1010");
-        assert_eq!(sc.next(), Token::new(TokenType::BinaryNumber, 0, 6));
+        assert_eq!(sc.next().unwrap(), Token::new(TokenType::BinaryNumber, 0, 6));
     }
 
     #[test]
     fn test_xor_keyword() {
         let mut sc = Scanner::new("XOR");
-        assert_eq!(sc.next(), Token::new(TokenType::Xor, 0, 3));
+        assert_eq!(sc.next().unwrap(), Token::new(TokenType::Xor, 0, 3));
     }
 
     #[test]
     fn test_shifts() {
         let mut sc = Scanner::new(">><<");
-        assert_eq!(sc.next(), Token::new(TokenType::ShiftRight, 0, 2));
-        assert_eq!(sc.next(), Token::new(TokenType::ShiftLeft, 2, 4));
+        assert_eq!(sc.next().unwrap(), Token::new(TokenType::ShiftRight, 0, 2));
+        assert_eq!(sc.next().unwrap(), Token::new(TokenType::ShiftLeft, 2, 4));
     }
 
     #[test]
     fn test_complete() {
         let input = "()0x1234 << 10";
         let mut sc = Scanner::new(input);
-        assert_eq!(sc.next(), Token::new(TokenType::LeftParen, 0, 1));
-        assert_eq!(sc.next(), Token::new(TokenType::RightParen, 1, 2));
-        assert_eq!(sc.next(), Token::new(TokenType::HexNumber, 2, 8));
-        assert_eq!(sc.next(), Token::new(TokenType::ShiftLeft, 9, 11));
+        assert_eq!(sc.next().unwrap(), Token::new(TokenType::LeftParen, 0, 1));
+        assert_eq!(sc.next().unwrap(), Token::new(TokenType::RightParen, 1, 2));
+        assert_eq!(sc.next().unwrap(), Token::new(TokenType::HexNumber, 2, 8));
+        assert_eq!(sc.next().unwrap(), Token::new(TokenType::ShiftLeft, 9, 11));
         assert_eq!(
-            sc.next(),
+            sc.next().unwrap(),
             Token::new(TokenType::DecimalNumber, 12, input.len())
         );
     }
@@ -394,20 +392,20 @@ mod tests {
     fn test_extended() {
         let input = "(0b1010 + 0xFF) and (2 OR 0b10) << 12";
         let mut sc = Scanner::new(input);
-        assert_eq!(sc.next(), Token::new(TokenType::LeftParen, 0, 1));
-        assert_eq!(sc.next(), Token::new(TokenType::BinaryNumber, 1, 7));
-        assert_eq!(sc.next(), Token::new(TokenType::Plus, 8, 9));
-        assert_eq!(sc.next(), Token::new(TokenType::HexNumber, 10, 14));
-        assert_eq!(sc.next(), Token::new(TokenType::RightParen, 14, 15));
-        assert_eq!(sc.next(), Token::new(TokenType::And, 16, 19));
-        assert_eq!(sc.next(), Token::new(TokenType::LeftParen, 20, 21));
-        assert_eq!(sc.next(), Token::new(TokenType::DecimalNumber, 21, 22));
-        assert_eq!(sc.next(), Token::new(TokenType::Or, 23, 25));
-        assert_eq!(sc.next(), Token::new(TokenType::BinaryNumber, 26, 30));
-        assert_eq!(sc.next(), Token::new(TokenType::RightParen, 30, 31));
-        assert_eq!(sc.next(), Token::new(TokenType::ShiftLeft, 32, 34));
+        assert_eq!(sc.next().unwrap(), Token::new(TokenType::LeftParen, 0, 1));
+        assert_eq!(sc.next().unwrap(), Token::new(TokenType::BinaryNumber, 1, 7));
+        assert_eq!(sc.next().unwrap(), Token::new(TokenType::Plus, 8, 9));
+        assert_eq!(sc.next().unwrap(), Token::new(TokenType::HexNumber, 10, 14));
+        assert_eq!(sc.next().unwrap(), Token::new(TokenType::RightParen, 14, 15));
+        assert_eq!(sc.next().unwrap(), Token::new(TokenType::And, 16, 19));
+        assert_eq!(sc.next().unwrap(), Token::new(TokenType::LeftParen, 20, 21));
+        assert_eq!(sc.next().unwrap(), Token::new(TokenType::DecimalNumber, 21, 22));
+        assert_eq!(sc.next().unwrap(), Token::new(TokenType::Or, 23, 25));
+        assert_eq!(sc.next().unwrap(), Token::new(TokenType::BinaryNumber, 26, 30));
+        assert_eq!(sc.next().unwrap(), Token::new(TokenType::RightParen, 30, 31));
+        assert_eq!(sc.next().unwrap(), Token::new(TokenType::ShiftLeft, 32, 34));
         assert_eq!(
-            sc.next(),
+            sc.next().unwrap(),
             Token::new(TokenType::DecimalNumber, 35, input.len())
         );
     }
