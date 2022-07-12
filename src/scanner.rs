@@ -64,7 +64,7 @@ enum State {
 
 #[derive(Debug, PartialEq)]
 pub struct Token {
-    typ: TokenType,
+    pub typ: TokenType,
     start: usize,
     length: usize,
 }
@@ -83,7 +83,7 @@ impl<'a> Scanner<'a> {
     /// ``let mut sc = Scanner("13 37");
     /// assert_eq!(sc.next(), Token::new(TokenType::DecimalNumber, 0, 2));
     /// assert_eq!(sc.next(), Token::new(TokenType::DecimalNumber, 3, 5));```
-    pub fn next(&mut self) -> Option<Token> {
+    pub fn next(&mut self) -> Token {
         self.eat_while(char::is_whitespace);
         let mut result_token;
         let mut state = State::Start;
@@ -95,25 +95,25 @@ impl<'a> Scanner<'a> {
                     Some('(') => {
                         let start = self.initial_len - token_start;
                         let token_len = self.initial_len - self.buffer.as_str().len();
-                        result_token = Some(Token::new(TokenType::LeftParen, start, token_len));
+                        result_token = Token::new(TokenType::LeftParen, start, token_len);
                         break;
                     }
                     Some(')') => {
                         let start = self.initial_len - token_start;
                         let token_len = self.initial_len - self.buffer.as_str().len();
-                        result_token = Some(Token::new(TokenType::RightParen, start, token_len));
+                        result_token = Token::new(TokenType::RightParen, start, token_len);
                         break;
                     }
                     Some('+') => {
                         let start = self.initial_len - token_start;
                         let token_len = self.initial_len - self.buffer.as_str().len();
-                        result_token = Some(Token::new(TokenType::Plus, start, token_len));
+                        result_token = Token::new(TokenType::Plus, start, token_len);
                         break;
                     }
                     Some('-') => {
                         let start = self.initial_len - token_start;
                         let token_len = self.initial_len - self.buffer.as_str().len();
-                        result_token = Some(Token::new(TokenType::Minus, start, token_len));
+                        result_token = Token::new(TokenType::Minus, start, token_len);
                         break;
                     }
                     Some('>') => state = State::ExpectShiftRight,
@@ -122,12 +122,15 @@ impl<'a> Scanner<'a> {
                     Some('1'..='9') => state = State::DecimalNumber,
                     Some('a'..='z' | 'A'..='Z') => state = State::Keyword,
                     None => {
-                        return None;
+                        let start = self.initial_len - token_start;
+                        let token_len = self.initial_len - self.buffer.as_str().len();
+                        result_token = Token::new(TokenType::Eof, start, token_len);
+                        break;
                     }
                     _ => {
                         let start = self.initial_len - token_start;
                         let token_len = self.initial_len - self.buffer.as_str().len();
-                        result_token = Some(Token::new(TokenType::Error, start, token_len));
+                        result_token = Token::new(TokenType::Error, start, token_len);
                         break;
                     }
                 },
@@ -135,19 +138,19 @@ impl<'a> Scanner<'a> {
                     Some('>') => {
                         let start = self.initial_len - token_start;
                         let token_len = self.initial_len - self.buffer.as_str().len();
-                        result_token = Some(Token::new(TokenType::ShiftRight, start, token_len));
+                        result_token = Token::new(TokenType::ShiftRight, start, token_len);
                         break;
                     }
                     None => {
                         let start = self.initial_len - token_start;
                         let token_len = self.initial_len - self.buffer.as_str().len();
-                        result_token = Some(Token::new(TokenType::ShiftRight, start, token_len));
+                        result_token = Token::new(TokenType::ShiftRight, start, token_len);
                         break;
                     }
                     _ => {
                         let start = self.initial_len - token_start;
                         let token_len = self.initial_len - self.buffer.as_str().len();
-                        result_token = Some(Token::new(TokenType::ShiftRight, start, token_len));
+                        result_token = Token::new(TokenType::ShiftRight, start, token_len);
                         break;
                     }
                 },
@@ -155,19 +158,19 @@ impl<'a> Scanner<'a> {
                     Some('<') => {
                         let start = self.initial_len - token_start;
                         let token_len = self.initial_len - self.buffer.as_str().len();
-                        result_token = Some(Token::new(TokenType::ShiftLeft, start, token_len));
+                        result_token = Token::new(TokenType::ShiftLeft, start, token_len);
                         break;
                     }
                     None => {
                         let start = self.initial_len - token_start;
                         let token_len = self.initial_len - self.buffer.as_str().len();
-                        result_token = Some(Token::new(TokenType::ShiftLeft, start, token_len));
+                        result_token = Token::new(TokenType::ShiftLeft, start, token_len);
                         break;
                     }
                     _ => {
                         let start = self.initial_len - token_start;
                         let token_len = self.initial_len - self.buffer.as_str().len();
-                        result_token = Some(Token::new(TokenType::Error, start, token_len));
+                        result_token = Token::new(TokenType::Error, start, token_len);
                         break;
                     }
                 },
@@ -176,19 +179,19 @@ impl<'a> Scanner<'a> {
                     Some(ch) if ch.is_whitespace() => {
                         let start = self.initial_len - token_start;
                         let token_len = self.initial_len - self.buffer.as_str().len();
-                        result_token = Some(Token::new(self.get_keyword(start, token_len), start, token_len));
+                        result_token = Token::new(self.get_keyword(start, token_len), start, token_len);
                         break;
                     }
                     None => {
                         let start = self.initial_len - token_start;
                         let token_len = self.initial_len - self.buffer.as_str().len();
-                        result_token = Some(Token::new(self.get_keyword(start, token_len), start, token_len));
+                        result_token = Token::new(self.get_keyword(start, token_len), start, token_len);
                         break;
                     }
                     _ => {
                         let start = self.initial_len - token_start;
                         let token_len = self.initial_len - self.buffer.as_str().len();
-                        result_token = Some(Token::new(TokenType::Error, start, token_len));
+                        result_token = Token::new(TokenType::Error, start, token_len);
                         break;
                     }
                 },
@@ -198,7 +201,7 @@ impl<'a> Scanner<'a> {
                     _ => {
                         let start = self.initial_len - token_start;
                         let token_len = self.initial_len - self.buffer.as_str().len();
-                        result_token = Some(Token::new(TokenType::Error, start, token_len));
+                        result_token = Token::new(TokenType::Error, start, token_len);
                         break;
                     }
                 },
@@ -213,19 +216,19 @@ impl<'a> Scanner<'a> {
                     {
                         let start = self.initial_len - token_start;
                         let token_len = self.initial_len - self.buffer.as_str().len();
-                        result_token = Some(Token::new(TokenType::DecimalNumber, start, token_len));
+                        result_token = Token::new(TokenType::DecimalNumber, start, token_len);
                         break;
                     }
                     None => {
                         let start = self.initial_len - token_start;
                         let token_len = self.initial_len - self.buffer.as_str().len();
-                        result_token = Some(Token::new(TokenType::DecimalNumber, start, token_len));
+                        result_token = Token::new(TokenType::DecimalNumber, start, token_len);
                         break;
                     }
                     _ => {
                         let start = self.initial_len - token_start;
                         let token_len = self.initial_len - self.buffer.as_str().len();
-                        result_token = Some(Token::new(TokenType::Error, start, token_len));
+                        result_token = Token::new(TokenType::Error, start, token_len);
                         break;
                     }
                 },
@@ -240,19 +243,19 @@ impl<'a> Scanner<'a> {
                     {
                         let start = self.initial_len - token_start;
                         let token_len = self.initial_len - self.buffer.as_str().len();
-                        result_token = Some(Token::new(TokenType::BinaryNumber, start, token_len));
+                        result_token = Token::new(TokenType::BinaryNumber, start, token_len);
                         break;
                     }
                     None => {
                         let start = self.initial_len - token_start;
                         let token_len = self.initial_len - self.buffer.as_str().len();
-                        result_token = Some(Token::new(TokenType::BinaryNumber, start, token_len));
+                        result_token = Token::new(TokenType::BinaryNumber, start, token_len);
                         break;
                     }
                     _ => {
                         let start = self.initial_len - token_start;
                         let token_len = self.initial_len - self.buffer.as_str().len();
-                        result_token = Some(Token::new(TokenType::Error, start, token_len));
+                        result_token = Token::new(TokenType::Error, start, token_len);
                         break;
                     }
                 },
@@ -267,19 +270,19 @@ impl<'a> Scanner<'a> {
                     {
                         let start = self.initial_len - token_start;
                         let token_len = self.initial_len - self.buffer.as_str().len();
-                        result_token = Some(Token::new(TokenType::HexNumber, start, token_len));
+                        result_token = Token::new(TokenType::HexNumber, start, token_len);
                         break;
                     }
                     None => {
                         let start = self.initial_len - token_start;
                         let token_len = self.initial_len - self.buffer.as_str().len();
-                        result_token = Some(Token::new(TokenType::HexNumber, start, token_len));
+                        result_token = Token::new(TokenType::HexNumber, start, token_len);
                         break;
                     }
                     _ => {
                         let start = self.initial_len - token_start;
                         let token_len = self.initial_len - self.buffer.as_str().len();
-                        result_token = Some(Token::new(TokenType::Error, start, token_len));
+                        result_token = Token::new(TokenType::Error, start, token_len);
                         break;
                     }
                 },
@@ -294,7 +297,7 @@ impl<'a> Scanner<'a> {
         }
     }
 
-    fn peek(&mut self) -> char {
+    pub fn peek(&mut self) -> char {
         self.buffer.clone().next().unwrap_or(EOF_CHAR)
     }
 
