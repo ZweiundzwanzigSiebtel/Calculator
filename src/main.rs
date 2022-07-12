@@ -2,9 +2,10 @@ use rustyline::error::ReadlineError;
 use rustyline::{Editor, Result};
 
 mod scanner;
+mod parser;
 mod vm;
 
-use scanner::Scanner;
+use scanner::{Scanner, TokenType};
 
 fn main() -> Result<()> {
 
@@ -14,8 +15,8 @@ fn main() -> Result<()> {
 
     let mut sc = Scanner::new(&file_content);
     let start = std::time::Instant::now();
-    while let Some(token) = sc.next() {
-        println!("{:?}", &token);
+    while sc.next().typ != TokenType::Eof {
+        println!("{:?}", sc.next());
     }
     println!("finished in: {:?}", start.elapsed());
 

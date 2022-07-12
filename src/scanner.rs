@@ -334,35 +334,35 @@ mod tests {
     #[test]
     fn test_whitespaces_only() {
         let mut sc = Scanner::new("  ");
-        assert_eq!(sc.next(), None);
+        assert_eq!(sc.next(), Token::new(TokenType::Eof, 0, 1));
     }
 
     #[test]
     fn test_single_character_token() {
         let mut sc = Scanner::new("(");
-        assert_eq!(sc.next().unwrap(), Token::new(TokenType::LeftParen, 0, 1));
+        assert_eq!(sc.next(), Token::new(TokenType::LeftParen, 0, 1));
     }
 
     #[test]
     fn test_shift_right() {
         let mut sc = Scanner::new(">>");
-        assert_eq!(sc.next().unwrap(), Token::new(TokenType::ShiftRight, 0, 2));
+        assert_eq!(sc.next(), Token::new(TokenType::ShiftRight, 0, 2));
     }
 
     #[test]
     fn test_few_parens() {
         let mut sc = Scanner::new("()()");
-        assert_eq!(sc.next().unwrap(), Token::new(TokenType::LeftParen, 0, 1));
-        assert_eq!(sc.next().unwrap(), Token::new(TokenType::RightParen, 1, 2));
-        assert_eq!(sc.next().unwrap(), Token::new(TokenType::LeftParen, 2, 3));
-        assert_eq!(sc.next().unwrap(), Token::new(TokenType::RightParen, 3, 4));
+        assert_eq!(sc.next(), Token::new(TokenType::LeftParen, 0, 1));
+        assert_eq!(sc.next(), Token::new(TokenType::RightParen, 1, 2));
+        assert_eq!(sc.next(), Token::new(TokenType::LeftParen, 2, 3));
+        assert_eq!(sc.next(), Token::new(TokenType::RightParen, 3, 4));
     }
 
     #[test]
     fn test_dec_number() {
         let mut sc = Scanner::new("1234");
         assert_eq!(
-            sc.next().unwrap(),
+            sc.next(),
             Token::new(TokenType::DecimalNumber, 0, 4)
         );
     }
@@ -370,14 +370,14 @@ mod tests {
     #[test]
     fn test_hex_number() {
         let mut sc = Scanner::new("0x1234");
-        assert_eq!(sc.next().unwrap(), Token::new(TokenType::HexNumber, 0, 6));
+        assert_eq!(sc.next(), Token::new(TokenType::HexNumber, 0, 6));
     }
 
     #[test]
     fn test_bin_number() {
         let mut sc = Scanner::new("0b1010");
         assert_eq!(
-            sc.next().unwrap(),
+            sc.next(),
             Token::new(TokenType::BinaryNumber, 0, 6)
         );
     }
@@ -385,26 +385,26 @@ mod tests {
     #[test]
     fn test_xor_keyword() {
         let mut sc = Scanner::new("XOR");
-        assert_eq!(sc.next().unwrap(), Token::new(TokenType::Xor, 0, 3));
+        assert_eq!(sc.next(), Token::new(TokenType::Xor, 0, 3));
     }
 
     #[test]
     fn test_shifts() {
         let mut sc = Scanner::new(">><<");
-        assert_eq!(sc.next().unwrap(), Token::new(TokenType::ShiftRight, 0, 2));
-        assert_eq!(sc.next().unwrap(), Token::new(TokenType::ShiftLeft, 2, 4));
+        assert_eq!(sc.next(), Token::new(TokenType::ShiftRight, 0, 2));
+        assert_eq!(sc.next(), Token::new(TokenType::ShiftLeft, 2, 4));
     }
 
 //    #[test]
 //    fn test_complete() {
 //        let input = "()0x1234 << 10";
 //        let mut sc = Scanner::new(input);
-//        assert_eq!(sc.next().unwrap(), Token::new(TokenType::LeftParen, 0, 1));
-//        assert_eq!(sc.next().unwrap(), Token::new(TokenType::RightParen, 1, 2));
-//        assert_eq!(sc.next().unwrap(), Token::new(TokenType::HexNumber, 2, 8));
-//        assert_eq!(sc.next().unwrap(), Token::new(TokenType::ShiftLeft, 9, 11));
+//        assert_eq!(sc.next(), Token::new(TokenType::LeftParen, 0, 1));
+//        assert_eq!(sc.next(), Token::new(TokenType::RightParen, 1, 2));
+//        assert_eq!(sc.next(), Token::new(TokenType::HexNumber, 2, 8));
+//        assert_eq!(sc.next(), Token::new(TokenType::ShiftLeft, 9, 11));
 //        assert_eq!(
-//            sc.next().unwrap(),
+//            sc.next(),
 //            Token::new(TokenType::DecimalNumber, 12, input.len())
 //        );
 //    }
@@ -413,20 +413,20 @@ mod tests {
 //    fn test_extended() {
 //        let input = "(0b1010 + 0xFF) and (2 OR 0b10) << 12";
 //        let mut sc = Scanner::new(input);
-//        assert_eq!(sc.next().unwrap(), Token::new(TokenType::LeftParen, 0, 1));
-//        assert_eq!(sc.next().unwrap(), Token::new(TokenType::BinaryNumber, 1, 7));
-//        assert_eq!(sc.next().unwrap(), Token::new(TokenType::Plus, 8, 9));
-//        assert_eq!(sc.next().unwrap(), Token::new(TokenType::HexNumber, 10, 14));
-//        assert_eq!(sc.next().unwrap(), Token::new(TokenType::RightParen, 14, 15));
-//        assert_eq!(sc.next().unwrap(), Token::new(TokenType::And, 16, 19));
-//        assert_eq!(sc.next().unwrap(), Token::new(TokenType::LeftParen, 20, 21));
-//        assert_eq!(sc.next().unwrap(), Token::new(TokenType::DecimalNumber, 21, 22));
-//        assert_eq!(sc.next().unwrap(), Token::new(TokenType::Or, 23, 25));
-//        assert_eq!(sc.next().unwrap(), Token::new(TokenType::BinaryNumber, 26, 30));
-//        assert_eq!(sc.next().unwrap(), Token::new(TokenType::RightParen, 30, 31));
-//        assert_eq!(sc.next().unwrap(), Token::new(TokenType::ShiftLeft, 32, 34));
+//        assert_eq!(sc.next(), Token::new(TokenType::LeftParen, 0, 1));
+//        assert_eq!(sc.next(), Token::new(TokenType::BinaryNumber, 1, 7));
+//        assert_eq!(sc.next(), Token::new(TokenType::Plus, 8, 9));
+//        assert_eq!(sc.next(), Token::new(TokenType::HexNumber, 10, 14));
+//        assert_eq!(sc.next(), Token::new(TokenType::RightParen, 14, 15));
+//        assert_eq!(sc.next(), Token::new(TokenType::And, 16, 19));
+//        assert_eq!(sc.next(), Token::new(TokenType::LeftParen, 20, 21));
+//        assert_eq!(sc.next(), Token::new(TokenType::DecimalNumber, 21, 22));
+//        assert_eq!(sc.next(), Token::new(TokenType::Or, 23, 25));
+//        assert_eq!(sc.next(), Token::new(TokenType::BinaryNumber, 26, 30));
+//        assert_eq!(sc.next(), Token::new(TokenType::RightParen, 30, 31));
+//        assert_eq!(sc.next(), Token::new(TokenType::ShiftLeft, 32, 34));
 //        assert_eq!(
-//            sc.next().unwrap(),
+//            sc.next(),
 //            Token::new(TokenType::DecimalNumber, 35, input.len())
 //        );
 //    }
