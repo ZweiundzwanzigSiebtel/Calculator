@@ -1,9 +1,9 @@
 use std::fmt;
 use crate::scanner::{Scanner, Token, TokenType};
 
-struct Parser<'a> {
+#[derive(Clone)]
+struct Parser {
     buffer: String,
-    scanner: Scanner<'a>,
 }
 
 #[derive(Debug)]
@@ -12,38 +12,39 @@ enum S {
     Cons(Token, Vec<S>),
 }
 
-impl<'a> Parser<'a> {
+impl<'a> Parser {
     fn new(input: &'a str) -> Self {
         Self {
             buffer: input.to_string(),
-            scanner: Scanner::new(&input),
         }
     }
 
-    pub fn parse(&mut self) -> S {
-        self.parser_worker(0)
+    pub fn parse(&mut self, input: &str) -> S {
+        let mut scanner = Scanner::new(input);
+        self.parser_worker(&mut scanner, 0)
     }
 
-    fn parser_worker(&mut self, min_bp: u8) -> S {
-        let next = self.scanner.next();
+    fn parser_worker(&mut self, scanner: &mut Scanner, min_bp: u8) -> S {
+        let next = scanner.next();
         let mut lhs = match next.typ {
-            //TODO must contain a number or an open paren
+            //next should be a number or a left paren
             TokenType::DecimalNumber | TokenType::BinaryNumber | TokenType::HexNumber => S::Atom(next),
             TokenType::LeftParen => {
-                let lhs = self.parser_worker(0);
-                assert_eq!(self.scanner.next().typ, TokenType::RightParen);
+                let lhs = self.parser_worker(scanner, 0);
+                assert_eq!(scanner.peek().typ, TokenType::RightParen);
                 lhs
             },
-            TokenType::And | TokenType::Or | TokenType::Xor | TokenType::Nor | TokenType::ShiftLeft | TokenType::ShiftRight => {
+            //currently only a Minus Token is allowed as prefix
+            TokenType::Minus => {
                 let ((), r_bp) = self.prefix_binding_power(&next);
-                let rhs = self.parser_worker(r_bp);
+                let rhs = self.parser_worker(scanner, r_bp);
                 S::Cons(next, vec![rhs])
             },
-            rest => panic!("bad token: {:?}", rest),
+            _ => panic!("bad token: {:?}", &next),
         };
 
         loop {
-            let op = match self.scanner.peek() { //after a number must follow some sort of operator, but just look at it here.
+            let op = match scanner.peek() {
                 eof if eof.typ == TokenType::Eof => break,
                 operator
                     if operator.typ == TokenType::Plus
@@ -53,7 +54,9 @@ impl<'a> Parser<'a> {
                         || operator.typ == TokenType::Nor
                         || operator.typ == TokenType::Xor
                         || operator.typ == TokenType::ShiftRight
-                        || operator.typ == TokenType::ShiftLeft => {
+                        || operator.typ == TokenType::ShiftLeft 
+                        || operator.typ == TokenType::LeftParen
+                        || operator.typ == TokenType::RightParen => {
                     operator
                 },
                 rest => panic!("bad token {:?}", rest),
@@ -64,9 +67,9 @@ impl<'a> Parser<'a> {
                 if l_bp < min_bp {
                     break;
                 }
-                self.scanner.next(); //eat the previous looked at operator or else implement a
+                scanner.next(); //eat the previous looked at operator or else implement a
 
-                let rhs = self.parser_worker(r_bp);
+                let rhs = self.parser_worker(scanner, r_bp);
 
                 lhs = S::Cons(op, vec![lhs, rhs]);
                 continue;
@@ -95,7 +98,10 @@ impl<'a> Parser<'a> {
     }
 
     fn prefix_binding_power(&self, op: &Token) -> ((), u8) {
-        todo!()
+        match op.typ {
+            TokenType::Minus => ((), 13),
+            _ => panic!("bad token {:?}", &op),
+        }
     }
 }
 
@@ -121,12 +127,36 @@ mod tests {
     #[test]
     fn test_simple() {
         let mut p = Parser::new("1 + 1");
-        println!("{:?}", p.parse());
+        assert_eq!("(+ DecimalNumber DecimalNumber)", p.parse(&"1 + 1").to_string());
     }
 
     #[test]
     fn test_more() {
         let mut p = Parser::new("1 << 2 + 3");
-        println!("{}", p.parse().to_string());
+        println!("{}", p.parse(&"1 << 2 + 3").to_string());
     }
+
+    #[test]
+    fn test_expression() {
+        let mut p = Parser::new("(1 + 1)");
+        println!("{}", p.parse(&"(1 + 1 )").to_string());
+    }
+
+    #[test]
+    fn test_prefix() {
+        let mut p = Parser::new("");
+        assert_eq!(p.parse(&"--1 + 2").to_string(), "(+ (- (- DecimalNumber)) DecimalNumber)");
+    }
+//
+//    #[test]
+//    fn test_extended_expression() {
+//        let mut p = Parser::new("(1 << 1) OR 5 AND 0xff");
+//        println!("(1 << 1) OR 5 AND 0xff >>>>> {}", p.parse(&"(1 << 1) OR 5 AND 0xff").to_string());
+//    }
+//
+//    #[test]
+//    fn test_more_extended_expression() {
+//        let mut p = Parser::new("(1 << 1)>>0b10 OR 5 AND 0xff");
+//        println!("(1 << 1)>>0b10 OR 5 AND 0xff >>>>> {}", p.parse(&"(1 << 1)>>0b10 OR 5 AND 0xff").to_string());
+//    }
 }
