@@ -11,10 +11,11 @@
 //!
 //!
 
-use phf::phf_map;
+use std::fmt;
 use std::str::Chars;
+use phf::phf_map;
 
-//#[derive(Debug)]
+#[derive(Clone)]
 pub struct Scanner<'a> {
     buffer: Chars<'a>,
     initial_len: usize,
@@ -291,13 +292,17 @@ impl<'a> Scanner<'a> {
         result_token
     }
 
+    pub fn peek(&mut self) -> Token {
+        self.clone().next()
+    }
+
     fn eat_while(&mut self, mut predicate: impl FnMut(char) -> bool) {
-        while predicate(self.peek()) && !self.buffer.as_str().is_empty() {
+        while predicate(self.peek_char()) && !self.buffer.as_str().is_empty() {
             self.buffer.next();
         }
     }
 
-    pub fn peek(&mut self) -> char {
+    fn peek_char(&mut self) -> char {
         self.buffer.clone().next().unwrap_or(EOF_CHAR)
     }
 
@@ -324,6 +329,29 @@ impl<'a> Scanner<'a> {
 impl Token {
     fn new(typ: TokenType, start: usize, length: usize) -> Self {
         Self { typ, start, length }
+    }
+}
+
+impl fmt::Display for Token {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self.typ {
+            TokenType::Or => write!(f, "OR"),
+            TokenType::And => write!(f, "AND"),
+            TokenType::Xor => write!(f, "XOR"),
+            TokenType::Nor => write!(f, "NOR"),
+            TokenType::Eof => write!(f, "EOF"),
+            TokenType::Plus => write!(f, "_+_"),
+            TokenType::Minus => write!(f, "_-_"),
+            TokenType::Error => write!(f, "Error"),
+            TokenType::LeftParen => write!(f, "_(_"),
+            TokenType::RightParen => write!(f, "_)_"),
+            TokenType::ShiftLeft => write!(f, "_<<_"),
+            TokenType::ShiftRight => write!(f, "_>>_"),
+            TokenType::DecimalNumber => write!(f, "DecimalNumber"),
+            TokenType::BinaryNumber => write!(f, "BinaryNumber"),
+            TokenType::HexNumber => write!(f, "HexNumber"),
+            TokenType::KeywordNotFound => write!(f, "KeywordNotFound"),
+        }
     }
 }
 
