@@ -7,7 +7,6 @@ use crate::scanner::{Scanner, Token, TokenType};
 #[derive(Clone)]
 struct Parser {
     buffer: String,
-    res: Vec<S>,
 }
 
 #[derive(Debug, Clone)]
@@ -20,7 +19,6 @@ impl<'a> Parser {
     fn new(input: &'a str) -> Self {
         Self {
             buffer: input.to_string(),
-            res: Vec::new(),
         }
     }
 
@@ -40,14 +38,16 @@ impl<'a> Parser {
             TokenType::DecimalNumber | TokenType::BinaryNumber | TokenType::HexNumber => S::Atom(next),
             TokenType::LeftParen => {
                 let lhs = self.parser_worker(scanner, 0, tx.clone());
-                assert_eq!(scanner.peek().typ, TokenType::RightParen);
+                assert_eq!(scanner.next().typ, TokenType::RightParen);
                 lhs
             },
             //currently only a Minus Token is allowed as prefix
             TokenType::Minus => {
                 let ((), r_bp) = self.prefix_binding_power(&next);
                 let rhs = self.parser_worker(scanner, r_bp, tx.clone());
-                S::Cons(next, vec![rhs])
+                let test = S::Cons(next, vec![rhs]);
+                println!("inside minus: {}", test.to_string());
+                test
             },
             _ => panic!("bad token: {:?}", &next),
         };
@@ -55,7 +55,7 @@ impl<'a> Parser {
 
         loop {
             let op = match scanner.peek() {
-                eof if eof.typ == TokenType::Eof => {println!("sending: {}", &lhs.to_string()); handle_yield(lhs.clone()); break},
+                eof if eof.typ == TokenType::Eof => break,
                 operator
                     if operator.typ == TokenType::Plus
                         || operator.typ == TokenType::Minus
@@ -81,16 +81,15 @@ impl<'a> Parser {
 
                 let rhs = self.parser_worker(scanner, r_bp, tx.clone());
 
-                lhs = S::Cons(op, vec![lhs, rhs]);
-                self.res.push(lhs.clone());
-                println!("now lhs is: {}", &lhs.to_string());
+
+                handle_yield(rhs.clone());
+                handle_yield(S::Atom(op));
                 handle_yield(lhs.clone());
+                lhs = S::Cons(op, vec![lhs, rhs]);
                 continue;
             }
             break;
         }
-        self.res.reverse();
-        handle_yield(lhs.clone());
         lhs
     }
 
@@ -140,13 +139,6 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_simple() {
-        let mut p = Parser::new("(1 + 1)");
-        let (tx, rx) = mpsc::channel();
-        println!("total result is >>>>>>>>>>>>>>>>>> {}", p.parse(&"(1 + 1) << 5", tx).to_string());
-    }
-
-    #[test]
     fn test_mpsc() {
         let mut p = Parser::new("(1 + 1) << 5");
         let (tx, rx) = mpsc::channel();
@@ -154,48 +146,20 @@ mod tests {
         for received in rx {
             println!("Got: {}", received);
         }
+        println!("finished");
         let _ = child.join();
     }
 
-//    #[test]
-//    fn test_more() {
-//        let mut p = Parser::new("1 << 2 + 3");
-//        p.parse("1 << 2 + 3");
-//        assert_eq!("(+ DecimalNumber DecimalNumber)", p.res.pop().unwrap().to_string());
-//        assert_eq!("(<< DecimalNumber (+ DecimalNumber DecimalNumber))", p.res.pop().unwrap().to_string());
-//    }
-//
-//    #[test]
-//    fn test_expression() {
-//        let mut p = Parser::new("(1 + 1)");
-//        p.parse("(1 + 1)");
-//        assert_eq!("(+ DecimalNumber DecimalNumber)", p.res.pop().unwrap().to_string());
-//    }
-//
-//
-//    #[test]
-//    fn test_extended_expression() {
-//        let mut p = Parser::new("(1 + 1)");
-//        p.parse("(1 + 1)<<5 or 3");
-//        println!("{}", p.res.pop().unwrap().to_string());
-//        println!("{}", p.res.pop().unwrap().to_string());
-//    }
-//
-//    #[test]
-//    fn test_prefix() {
-//        let mut p = Parser::new("");
-//        assert_eq!(p.parse(&"--1 + 2").to_string(), "(+ (- (- DecimalNumber)) DecimalNumber)");
-//    }
-//
-//    #[test]
-//    fn test_extended_expression() {
-//        let mut p = Parser::new("(1 << 1) OR 5 AND 0xff");
-//        println!("(1 << 1) OR 5 AND 0xff >>>>> {}", p.parse(&"(1 << 1) OR 5 AND 0xff").to_string());
-//    }
-//
-//    #[test]
-//    fn test_more_extended_expression() {
-//        let mut p = Parser::new("(1 << 1)>>0b10 OR 5 AND 0xff");
-//        println!("(1 << 1)>>0b10 OR 5 AND 0xff >>>>> {}", p.parse(&"(1 << 1)>>0b10 OR 5 AND 0xff").to_string());
-//    }
+    #[test]
+    fn test_longer_expression() {
+        let mut p = Parser::new("");
+        let (tx, rx) = mpsc::channel();
+        let child = thread::spawn(move || p.parse(&"((1 + 1) << 5) and 0xff", tx));
+        for received in rx {
+            println!("Got: {}", received);
+        }
+        println!("finished");
+        let _ = child.join();
+
+    }
 }
