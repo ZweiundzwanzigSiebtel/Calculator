@@ -35,7 +35,7 @@ impl<'a> Parser {
         let next = scanner.next();
         let mut lhs = match next.typ {
             //next should be a number or a left paren
-            TokenType::DecimalNumber | TokenType::BinaryNumber | TokenType::HexNumber => S::Atom(next),
+            TokenType::DecimalNumber | TokenType::BinaryNumber | TokenType::HexNumber => {handle_yield(S::Atom(next)); S::Atom(next)},
             TokenType::LeftParen => {
                 let lhs = self.parser_worker(scanner, 0, tx.clone());
                 assert_eq!(scanner.next().typ, TokenType::RightParen);
@@ -73,6 +73,7 @@ impl<'a> Parser {
             };
             //now compute the binding power of the just fetched operator
             if let Some((l_bp, r_bp)) = self.infix_binding_power(&op) {
+                handle_yield(S::Atom(op));
                 //stop eating more tokens, if the left bp is lower than the min_bp
                 if l_bp < min_bp {
                     break;
@@ -80,11 +81,6 @@ impl<'a> Parser {
                 scanner.next(); //eat the previous looked at operator (this is safe, because op breaks out of the loop if op.peek() == eof)
 
                 let rhs = self.parser_worker(scanner, r_bp, tx.clone());
-
-
-                handle_yield(rhs.clone());
-                handle_yield(S::Atom(op));
-                handle_yield(lhs.clone());
                 lhs = S::Cons(op, vec![lhs, rhs]);
                 continue;
             }
