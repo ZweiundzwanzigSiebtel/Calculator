@@ -1,6 +1,9 @@
 use rustyline::error::ReadlineError;
 use rustyline::{Editor, Result};
 
+use std::thread;
+use std::sync::mpsc::{self, channel, Sender, Receiver};
+
 mod scanner;
 mod parser;
 mod vm;
@@ -29,7 +32,7 @@ fn main() -> Result<()> {
         let readline = rl.readline(">>> ");
         match readline {
             Ok(line) => {
-                
+
                 rl.add_history_entry(line.as_str());
                 println!("Line: {}", line);
             }

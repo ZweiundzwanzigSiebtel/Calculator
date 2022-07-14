@@ -10,7 +10,7 @@ pub struct Scanner<'a> {
 
 const EOF_CHAR: char = '\0';
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Copy, Clone)]
 pub enum TokenType {
     //single-character Tokens
     LeftParen,
@@ -50,7 +50,7 @@ enum State {
     DecimalNumber,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Token {
     pub typ: TokenType,
     start: usize,

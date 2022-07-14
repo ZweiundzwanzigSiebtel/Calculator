@@ -1,12 +1,16 @@
+use std::thread;
+use std::sync::mpsc::{self, channel, Sender, Receiver};
+
 use std::fmt;
 use crate::scanner::{Scanner, Token, TokenType};
 
 #[derive(Clone)]
 struct Parser {
     buffer: String,
+    res: Vec<S>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum S {
     Atom(Token),
     Cons(Token, Vec<S>),
@@ -16,6 +20,7 @@ impl<'a> Parser {
     fn new(input: &'a str) -> Self {
         Self {
             buffer: input.to_string(),
+            res: Vec::new(),
         }
     }
 
@@ -67,15 +72,18 @@ impl<'a> Parser {
                 if l_bp < min_bp {
                     break;
                 }
-                scanner.next(); //eat the previous looked at operator or else implement a
+                scanner.next(); //eat the previous looked at operator (this is safe, because op breaks out of the loop if op.peek() == eof)
 
                 let rhs = self.parser_worker(scanner, r_bp);
 
                 lhs = S::Cons(op, vec![lhs, rhs]);
+                self.res.push(lhs.clone());
                 continue;
             }
             break;
         }
+        self.res.reverse();
+        println!("lhs is: >>> {:?}", &lhs);
         lhs
     }
 
@@ -124,29 +132,41 @@ impl fmt::Display for S {
 mod tests {
     use super::*;
 
-    #[test]
-    fn test_simple() {
-        let mut p = Parser::new("1 + 1");
-        assert_eq!("(+ DecimalNumber DecimalNumber)", p.parse(&"1 + 1").to_string());
-    }
-
-    #[test]
-    fn test_more() {
-        let mut p = Parser::new("1 << 2 + 3");
-        println!("{}", p.parse(&"1 << 2 + 3").to_string());
-    }
-
-    #[test]
-    fn test_expression() {
-        let mut p = Parser::new("(1 + 1)");
-        println!("{}", p.parse(&"(1 + 1 )").to_string());
-    }
-
-    #[test]
-    fn test_prefix() {
-        let mut p = Parser::new("");
-        assert_eq!(p.parse(&"--1 + 2").to_string(), "(+ (- (- DecimalNumber)) DecimalNumber)");
-    }
+//    #[test]
+//    fn test_simple() {
+//        let mut p = Parser::new("1 + 1");
+//        assert_eq!("(+ DecimalNumber DecimalNumber)", p.parse(&"1 + 1").to_string());
+//    }
+//
+//    #[test]
+//    fn test_more() {
+//        let mut p = Parser::new("1 << 2 + 3");
+//        p.parse("1 << 2 + 3");
+//        assert_eq!("(+ DecimalNumber DecimalNumber)", p.res.pop().unwrap().to_string());
+//        assert_eq!("(<< DecimalNumber (+ DecimalNumber DecimalNumber))", p.res.pop().unwrap().to_string());
+//    }
+//
+//    #[test]
+//    fn test_expression() {
+//        let mut p = Parser::new("(1 + 1)");
+//        p.parse("(1 + 1)");
+//        assert_eq!("(+ DecimalNumber DecimalNumber)", p.res.pop().unwrap().to_string());
+//    }
+//
+//
+//    #[test]
+//    fn test_extended_expression() {
+//        let mut p = Parser::new("(1 + 1)");
+//        p.parse("(1 + 1)<<5 or 3");
+//        println!("{}", p.res.pop().unwrap().to_string());
+//        println!("{}", p.res.pop().unwrap().to_string());
+//    }
+//
+//    #[test]
+//    fn test_prefix() {
+//        let mut p = Parser::new("");
+//        assert_eq!(p.parse(&"--1 + 2").to_string(), "(+ (- (- DecimalNumber)) DecimalNumber)");
+//    }
 //
 //    #[test]
 //    fn test_extended_expression() {
