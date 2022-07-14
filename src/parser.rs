@@ -24,47 +24,52 @@ impl<'a> Parser {
         }
     }
 
-    pub fn parse(&mut self, input: &str) -> S {
+    pub fn parse(&mut self, input: &str, tx: Sender<S>) -> S {
         let mut scanner = Scanner::new(input);
-        self.parser_worker(&mut scanner, 0)
+        self.parser_worker(&mut scanner, 0, tx)
     }
 
-    fn parser_worker(&mut self, scanner: &mut Scanner, min_bp: u8) -> S {
+    fn parser_worker(&mut self, scanner: &mut Scanner, min_bp: u8, tx: Sender<S>) -> S {
+        let handle_yield = |data: S| {
+            tx.send(data).unwrap();
+        };
+
         let next = scanner.next();
         let mut lhs = match next.typ {
             //next should be a number or a left paren
             TokenType::DecimalNumber | TokenType::BinaryNumber | TokenType::HexNumber => S::Atom(next),
             TokenType::LeftParen => {
-                let lhs = self.parser_worker(scanner, 0);
+                let lhs = self.parser_worker(scanner, 0, tx.clone());
                 assert_eq!(scanner.peek().typ, TokenType::RightParen);
                 lhs
             },
             //currently only a Minus Token is allowed as prefix
             TokenType::Minus => {
                 let ((), r_bp) = self.prefix_binding_power(&next);
-                let rhs = self.parser_worker(scanner, r_bp);
+                let rhs = self.parser_worker(scanner, r_bp, tx.clone());
                 S::Cons(next, vec![rhs])
             },
             _ => panic!("bad token: {:?}", &next),
         };
 
+
         loop {
             let op = match scanner.peek() {
-                eof if eof.typ == TokenType::Eof => break,
+                eof if eof.typ == TokenType::Eof => {println!("sending: {}", &lhs.to_string()); handle_yield(lhs.clone()); break},
                 operator
                     if operator.typ == TokenType::Plus
                         || operator.typ == TokenType::Minus
-                        || operator.typ == TokenType::And
-                        || operator.typ == TokenType::Or
-                        || operator.typ == TokenType::Nor
-                        || operator.typ == TokenType::Xor
-                        || operator.typ == TokenType::ShiftRight
-                        || operator.typ == TokenType::ShiftLeft 
-                        || operator.typ == TokenType::LeftParen
-                        || operator.typ == TokenType::RightParen => {
-                    operator
-                },
-                rest => panic!("bad token {:?}", rest),
+                            || operator.typ == TokenType::And
+                            || operator.typ == TokenType::Or
+                            || operator.typ == TokenType::Nor
+                            || operator.typ == TokenType::Xor
+                            || operator.typ == TokenType::ShiftRight
+                            || operator.typ == TokenType::ShiftLeft 
+                            || operator.typ == TokenType::LeftParen
+                            || operator.typ == TokenType::RightParen => {
+                                operator
+                            },
+                        rest => panic!("bad token {:?}", rest),
             };
             //now compute the binding power of the just fetched operator
             if let Some((l_bp, r_bp)) = self.infix_binding_power(&op) {
@@ -74,16 +79,18 @@ impl<'a> Parser {
                 }
                 scanner.next(); //eat the previous looked at operator (this is safe, because op breaks out of the loop if op.peek() == eof)
 
-                let rhs = self.parser_worker(scanner, r_bp);
+                let rhs = self.parser_worker(scanner, r_bp, tx.clone());
 
                 lhs = S::Cons(op, vec![lhs, rhs]);
                 self.res.push(lhs.clone());
+                println!("now lhs is: {}", &lhs.to_string());
+                handle_yield(lhs.clone());
                 continue;
             }
             break;
         }
         self.res.reverse();
-        println!("lhs is: >>> {:?}", &lhs);
+        handle_yield(lhs.clone());
         lhs
     }
 
@@ -132,12 +139,24 @@ impl fmt::Display for S {
 mod tests {
     use super::*;
 
-//    #[test]
-//    fn test_simple() {
-//        let mut p = Parser::new("1 + 1");
-//        assert_eq!("(+ DecimalNumber DecimalNumber)", p.parse(&"1 + 1").to_string());
-//    }
-//
+    #[test]
+    fn test_simple() {
+        let mut p = Parser::new("(1 + 1)");
+        let (tx, rx) = mpsc::channel();
+        println!("total result is >>>>>>>>>>>>>>>>>> {}", p.parse(&"(1 + 1) << 5", tx).to_string());
+    }
+
+    #[test]
+    fn test_mpsc() {
+        let mut p = Parser::new("(1 + 1) << 5");
+        let (tx, rx) = mpsc::channel();
+        let child = thread::spawn(move || p.parse(&"(1 + 1) << 5", tx));
+        for received in rx {
+            println!("Got: {}", received);
+        }
+        let _ = child.join();
+    }
+
 //    #[test]
 //    fn test_more() {
 //        let mut p = Parser::new("1 << 2 + 3");
