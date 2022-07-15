@@ -55,7 +55,8 @@ impl<'a> Scanner<'a> {
     pub fn new(input: &'a str) -> Self {
         Self {
             buffer: input.chars(),
-            lookup: input.to_string(),
+            lookup: input.to_string(), //is just a copy of the buffer, because the chars iterator
+                                       //consumes the values
             initial_len: input.len(),
         }
     }
@@ -63,8 +64,8 @@ impl<'a> Scanner<'a> {
     /// returns the next Token from the buffer the scanner was instantiated with.
     /// # Example:
     /// ``let mut sc = Scanner("13 37");
-    /// assert_eq!(sc.next(), Token::new(TokenType::DecimalNumber, 0, 2));
-    /// assert_eq!(sc.next(), Token::new(TokenType::DecimalNumber, 3, 5));```
+    /// assert_eq!(sc.next(), Token::DecimalNumber(13));
+    /// assert_eq!(sc.next(), Token::DecimalNumber(37));```
     pub fn next(&mut self) -> Token {
         self.eat_while(char::is_whitespace);
         let result_token;
