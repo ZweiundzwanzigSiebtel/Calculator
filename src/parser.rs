@@ -4,38 +4,50 @@ use std::sync::mpsc::{self, channel, Sender, Receiver};
 use std::fmt;
 use crate::scanner::{Scanner, Token, TokenType};
 
+#[derive(Debug)]
+pub struct Instruction {
+    pub op: Token,
+    pub lhs: Token,
+    pub rhs: Token,
+}
+
+impl Instruction {
+    fn new(op: Token, lhs: Token, rhs: Token) -> Self {
+        Self {
+            op,
+            lhs,
+            rhs,
+        }
+    }
+}
+
 #[derive(Clone)]
-struct Parser {
+pub struct Parser {
     buffer: String,
 }
 
-#[derive(Debug, Clone)]
-enum S {
-    Atom(Token),
-    Cons(Token, Vec<S>),
-}
-
 impl<'a> Parser {
-    fn new(input: &'a str) -> Self {
+    pub fn new(input: &'a str) -> Self {
         Self {
             buffer: input.to_string(),
         }
     }
 
-    pub fn parse(&mut self, input: &str, tx: Sender<S>) -> S {
+    pub fn parse(&mut self, input: &str, tx: Sender<Instruction>) {
         let mut scanner = Scanner::new(input);
-        self.parser_worker(&mut scanner, 0, tx)
+        self.parser_worker(&mut scanner, 0, tx);
     }
 
-    fn parser_worker(&mut self, scanner: &mut Scanner, min_bp: u8, tx: Sender<S>) -> S {
-        let handle_yield = |data: S| {
+    fn parser_worker(&mut self, scanner: &mut Scanner, min_bp: u8, tx: Sender<Instruction>) -> Token {
+        let handle_yield = |op: Token, lhs: Token, rhs: Token| {
+            let data = Instruction::new(op, lhs, rhs);
             tx.send(data).unwrap();
         };
 
         let next = scanner.next();
-        let mut lhs = match next.typ {
+        let lhs = match next.typ {
             //next should be a number or a left paren
-            TokenType::DecimalNumber | TokenType::BinaryNumber | TokenType::HexNumber => {handle_yield(S::Atom(next)); S::Atom(next)},
+            TokenType::DecimalNumber | TokenType::BinaryNumber | TokenType::HexNumber => {/*handle_yield(S::Atom(next)); */next},
             TokenType::LeftParen => {
                 let lhs = self.parser_worker(scanner, 0, tx.clone());
                 assert_eq!(scanner.next().typ, TokenType::RightParen);
@@ -45,9 +57,7 @@ impl<'a> Parser {
             TokenType::Minus => {
                 let ((), r_bp) = self.prefix_binding_power(&next);
                 let rhs = self.parser_worker(scanner, r_bp, tx.clone());
-                let test = S::Cons(next, vec![rhs]);
-                println!("inside minus: {}", test.to_string());
-                test
+                rhs
             },
             _ => panic!("bad token: {:?}", &next),
         };
@@ -73,7 +83,6 @@ impl<'a> Parser {
             };
             //now compute the binding power of the just fetched operator
             if let Some((l_bp, r_bp)) = self.infix_binding_power(&op) {
-                handle_yield(S::Atom(op));
                 //stop eating more tokens, if the left bp is lower than the min_bp
                 if l_bp < min_bp {
                     break;
@@ -81,7 +90,8 @@ impl<'a> Parser {
                 scanner.next(); //eat the previous looked at operator (this is safe, because op breaks out of the loop if op.peek() == eof)
 
                 let rhs = self.parser_worker(scanner, r_bp, tx.clone());
-                lhs = S::Cons(op, vec![lhs, rhs]);
+                handle_yield(op, lhs.clone(), rhs.clone());
+
                 continue;
             }
             break;
@@ -115,21 +125,6 @@ impl<'a> Parser {
     }
 }
 
-impl fmt::Display for S {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            S::Atom(i) => write!(f, "{}", i),
-            S::Cons(head, rest) => {
-                write!(f, "({}", head)?;
-                for s in rest {
-                    write!(f, " {}", s)?
-                }
-                write!(f, ")")
-            }
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -140,7 +135,7 @@ mod tests {
         let (tx, rx) = mpsc::channel();
         let child = thread::spawn(move || p.parse(&"(1 + 1) << 5", tx));
         for received in rx {
-            println!("Got: {}", received);
+            println!("Got: {:?}", received);
         }
         println!("finished");
         let _ = child.join();
@@ -152,10 +147,49 @@ mod tests {
         let (tx, rx) = mpsc::channel();
         let child = thread::spawn(move || p.parse(&"((1 + 1) << 5) and 0xff", tx));
         for received in rx {
-            println!("Got: {}", received);
+            println!("Got: {:?}", received);
         }
         println!("finished");
         let _ = child.join();
 
+    }
+
+    #[test]
+    fn test_nested_expression() {
+        let mut p = Parser::new("");
+        let (tx, rx) = mpsc::channel();
+        let child = thread::spawn(move || {let x = p.parse(&"1 and 2 + 3 and 4 + 5", tx); println!("{:?}", &x)});
+        for received in rx {
+            println!("Got: {:?}", received);
+        }
+        println!("finished");
+        let _ = child.join();
+    }
+
+    #[test]
+    fn test_chunks() {
+        let mut p = Parser::new("");
+        let (tx, rx) = mpsc::channel();
+        let child = thread::spawn(move || {
+            let x = p.parse(&"1 and 2 + 3 and 4 + 5", tx);
+            println!("items >>> {:?}", &x);
+        });
+        for received in rx {
+            println!("Got: {:?}", received);
+        }
+        println!("finished");
+        let _ = child.join();
+    }
+
+    #[test]
+    fn test_high_precedence_last() {
+        let mut p = Parser::new("");
+        let (tx, rx) = mpsc::channel();
+        let child = thread::spawn(move || {let x = p.parse(&"1 and 2 and 3 and 4 + 5", tx); });
+        for received in rx {
+            println!("Got: {:?}", received);
+        }
+        println!("finished");
+        let _ = child.join();
     }
 }
