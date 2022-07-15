@@ -8,7 +8,7 @@ mod scanner;
 mod parser;
 mod vm;
 
-use scanner::{Scanner, TokenType};
+use scanner::{Scanner, Token};
 
 fn main() -> Result<()> {
 
@@ -18,7 +18,7 @@ fn main() -> Result<()> {
 
     let mut sc = Scanner::new(&file_content);
     let start = std::time::Instant::now();
-    while sc.next().typ != TokenType::Eof {
+    while sc.next() != Token::Eof {
         println!("{:?}", sc.next());
     }
     println!("finished in: {:?}", start.elapsed());

@@ -5,13 +5,14 @@ use std::str::Chars;
 #[derive(Clone)]
 pub struct Scanner<'a> {
     buffer: Chars<'a>,
+    lookup: String,
     initial_len: usize,
 }
 
 const EOF_CHAR: char = '\0';
 
-#[derive(Debug, PartialEq, Copy, Clone)]
-pub enum TokenType {
+#[derive(Debug, PartialEq, Clone)]
+pub enum Token {
     //single-character Tokens
     LeftParen,
     RightParen,
@@ -23,9 +24,9 @@ pub enum TokenType {
     ShiftRight,
 
     //Literals
-    BinaryNumber,
-    DecimalNumber,
-    HexNumber,
+    BinaryNumber(String),
+    DecimalNumber(String),
+    HexNumber(String),
 
     //Keywords
     And,
@@ -50,18 +51,17 @@ enum State {
     DecimalNumber,
 }
 
-#[derive(Debug, Copy, Clone, PartialEq)]
-pub struct Token {
-    pub typ: TokenType,
-    start: usize,
-    length: usize,
-}
+//#[derive(Debug, Clone, PartialEq)]
+//pub struct Token {
+//    pub typ: TokenType,
+//}
 
 impl<'a> Scanner<'a> {
     /// Creates a new scanner instance
     pub fn new(input: &'a str) -> Self {
         Self {
             buffer: input.chars(),
+            lookup: input.to_string(),
             initial_len: input.len(),
         }
     }
@@ -84,27 +84,19 @@ impl<'a> Scanner<'a> {
                     let ch = self.buffer.next();
                     match ch {
                         Some('(') => {
-                            let start = self.initial_len - token_start;
-                            let token_len = self.initial_len - self.buffer.as_str().len();
-                            result_token = Token::new(TokenType::LeftParen, start, token_len);
+                            result_token = Token::LeftParen;
                             break;
                         }
                         Some(')') => {
-                            let start = self.initial_len - token_start;
-                            let token_len = self.initial_len - self.buffer.as_str().len();
-                            result_token = Token::new(TokenType::RightParen, start, token_len);
+                            result_token = Token::RightParen;
                             break;
                         }
                         Some('+') => {
-                            let start = self.initial_len - token_start;
-                            let token_len = self.initial_len - self.buffer.as_str().len();
-                            result_token = Token::new(TokenType::Plus, start, token_len);
+                            result_token = Token::Plus;
                             break;
                         }
                         Some('-') => {
-                            let start = self.initial_len - token_start;
-                            let token_len = self.initial_len - self.buffer.as_str().len();
-                            result_token = Token::new(TokenType::Minus, start, token_len);
+                            result_token = Token::Minus;
                             break;
                         }
                         Some('>') => state = State::ExpectShiftRight,
@@ -116,87 +108,78 @@ impl<'a> Scanner<'a> {
                             possible_keyword.push(ch.unwrap())
                         }
                         None => {
-                            let start = self.initial_len - token_start;
-                            let token_len = self.initial_len - self.buffer.as_str().len();
-                            result_token = Token::new(TokenType::Eof, start, token_len);
+                            result_token = Token::Eof;
                             break;
                         }
                         _ => {
                             let start = self.initial_len - token_start;
                             let token_len = self.initial_len - self.buffer.as_str().len();
-                            result_token = Token::new(TokenType::Error, start, token_len);
+                            result_token = Token::Error; //TODO use column indicator here
                             break;
                         }
                     }
                 }
                 State::ExpectShiftRight => match self.buffer.next() {
                     Some('>') => {
-                        let start = self.initial_len - token_start;
-                        let token_len = self.initial_len - self.buffer.as_str().len();
-                        result_token = Token::new(TokenType::ShiftRight, start, token_len);
+                        result_token = Token::ShiftRight;
                         break;
                     }
                     None => {
-                        let start = self.initial_len - token_start;
-                        let token_len = self.initial_len - self.buffer.as_str().len();
-                        result_token = Token::new(TokenType::ShiftRight, start, token_len);
+                        result_token = Token::ShiftRight;
                         break;
                     }
                     _ => {
                         let start = self.initial_len - token_start;
                         let token_len = self.initial_len - self.buffer.as_str().len();
-                        result_token = Token::new(TokenType::ShiftRight, start, token_len);
+                        result_token = Token::ShiftRight;
                         break;
                     }
                 },
                 State::ExpectShiftLeft => match self.buffer.next() {
                     Some('<') => {
-                        let start = self.initial_len - token_start;
-                        let token_len = self.initial_len - self.buffer.as_str().len();
-                        result_token = Token::new(TokenType::ShiftLeft, start, token_len);
+                        result_token = Token::ShiftLeft;
                         break;
                     }
                     None => {
-                        let start = self.initial_len - token_start;
-                        let token_len = self.initial_len - self.buffer.as_str().len();
-                        result_token = Token::new(TokenType::ShiftLeft, start, token_len);
+                        result_token = Token::ShiftLeft;
                         break;
                     }
                     _ => {
                         let start = self.initial_len - token_start;
                         let token_len = self.initial_len - self.buffer.as_str().len();
-                        result_token = Token::new(TokenType::Error, start, token_len);
+                        result_token = Token::Error;
                         break;
                     }
                 },
                 State::Keyword => {
-                    let next_char = self.peek_char();
-                    match next_char {
-                        'a'..='z' | 'A'..='Z' => {
-                            possible_keyword.push(next_char);
-                            self.buffer.next();
-                        },
-                        ch if ch.is_whitespace() => {
-                            let start = self.initial_len - token_start;
-                            let token_len = self.initial_len - self.buffer.as_str().len();
-                            result_token =
-                                Token::new(self.get_keyword(&possible_keyword), start, token_len);
-                            break;
-                        }
-                        EOF_CHAR => {
-                            let start = self.initial_len - token_start;
-                            let token_len = self.initial_len - self.buffer.as_str().len();
-                            result_token =
-                                Token::new(self.get_keyword(&possible_keyword), start, token_len);
-                            break;
-                        }
-                        _ => {
-                            let start = self.initial_len - token_start;
-                            let token_len = self.initial_len - self.buffer.as_str().len();
-                            result_token = Token::new(TokenType::Error, start, token_len);
-                            break;
-                        }
-                    }
+                    unimplemented!();
+//                    let next_char = self.peek_char();
+//                    match next_char {
+//                        'a'..='z' | 'A'..='Z' => {
+//                            possible_keyword.push(next_char);
+//                            self.buffer.next();
+//                        },
+//                        ch if ch.is_whitespace() => {
+//                            let start = self.initial_len - token_start;
+//                            let token_len = self.initial_len - self.buffer.as_str().len();
+//                            result_token =
+//                                Token::new(self.get_keyword(&possible_keyword));
+//                            break;
+//                        }
+//                        EOF_CHAR => {
+//                            let start = self.initial_len - token_start;
+//                            let token_len = self.initial_len - self.buffer.as_str().len();
+//                            result_token =
+//                                Token::new(self.get_keyword(&possible_keyword));
+//                            break;
+//                        }
+//                        _ => {
+//                            let start = self.initial_len - token_start;
+//                            let token_len = self.initial_len - self.buffer.as_str().len();
+//                            result_token = Token::Error;
+//                            break;
+//                        }
+//                    }
                 }
                 State::ExpectBase => match self.buffer.next() {
                     Some('b') => state = State::BinaryNumber,
@@ -204,7 +187,7 @@ impl<'a> Scanner<'a> {
                     _ => {
                         let start = self.initial_len - token_start;
                         let token_len = self.initial_len - self.buffer.as_str().len();
-                        result_token = Token::new(TokenType::Error, start, token_len);
+                        result_token = Token::Error;
                         break;
                     }
                 },
@@ -220,19 +203,19 @@ impl<'a> Scanner<'a> {
                             || ch == '<' => {
                         let start = self.initial_len - token_start;
                         let token_len = self.initial_len - self.buffer.as_str().len();
-                        result_token = Token::new(TokenType::DecimalNumber, start, token_len);
+                        result_token = Token::DecimalNumber(self.lookup[start..token_len].to_string());
                         break;
                     }
                     EOF_CHAR => {
                         let start = self.initial_len - token_start;
                         let token_len = self.initial_len - self.buffer.as_str().len();
-                        result_token = Token::new(TokenType::DecimalNumber, start, token_len);
+                        result_token = Token::DecimalNumber(self.lookup[start..token_len].to_string());
                         break;
                     }
                     _ => {
                         let start = self.initial_len - token_start;
                         let token_len = self.initial_len - self.buffer.as_str().len();
-                        result_token = Token::new(TokenType::Error, start, token_len);
+                        result_token = Token::Error;
                         break;
                     }
                 },
@@ -250,19 +233,19 @@ impl<'a> Scanner<'a> {
                     {
                         let start = self.initial_len - token_start;
                         let token_len = self.initial_len - self.buffer.as_str().len();
-                        result_token = Token::new(TokenType::BinaryNumber, start, token_len);
+                        result_token = Token::BinaryNumber(self.lookup[start..token_len].to_string());
                         break;
                     }
                     EOF_CHAR => {
                         let start = self.initial_len - token_start;
                         let token_len = self.initial_len - self.buffer.as_str().len();
-                        result_token = Token::new(TokenType::BinaryNumber, start, token_len);
+                        result_token = Token::BinaryNumber(self.lookup[start..token_len].to_string());
                         break;
                     }
                     _ => {
                         let start = self.initial_len - token_start;
                         let token_len = self.initial_len - self.buffer.as_str().len();
-                        result_token = Token::new(TokenType::Error, start, token_len);
+                        result_token = Token::Error;
                         break;
                     }
                 },
@@ -279,19 +262,19 @@ impl<'a> Scanner<'a> {
                     {
                         let start = self.initial_len - token_start;
                         let token_len = self.initial_len - self.buffer.as_str().len();
-                        result_token = Token::new(TokenType::HexNumber, start, token_len);
+                        result_token = Token::HexNumber(self.lookup[start..token_len].to_string());
                         break;
                     }
                     EOF_CHAR => {
                         let start = self.initial_len - token_start;
                         let token_len = self.initial_len - self.buffer.as_str().len();
-                        result_token = Token::new(TokenType::HexNumber, start, token_len);
+                        result_token = Token::HexNumber(self.lookup[start..token_len].to_string());
                         break;
                     }
                     _ => {
                         let start = self.initial_len - token_start;
                         let token_len = self.initial_len - self.buffer.as_str().len();
-                        result_token = Token::new(TokenType::Error, start, token_len);
+                        result_token = Token::Error;
                         break;
                     }
                 },
@@ -314,52 +297,46 @@ impl<'a> Scanner<'a> {
         self.buffer.clone().next().unwrap_or(EOF_CHAR)
     }
 
-    fn get_keyword(&mut self, possible_keyword: &str) -> TokenType {
-        static KEYWORDS: phf::Map<&'static str, TokenType> = phf_map! {
-            "and" => TokenType::And,
-            "AND" => TokenType::And,
-            "or" => TokenType::Or,
-            "OR" => TokenType::Or,
-            "nor" => TokenType::Nor,
-            "NOR" => TokenType::Nor,
-            "xor" => TokenType::Xor,
-            "XOR" => TokenType::Xor,
+    fn get_keyword(&mut self, possible_keyword: &str) -> Token {
+        static KEYWORDS: phf::Map<&'static str, Token> = phf_map! {
+            "and" => Token::And,
+            "AND" => Token::And,
+            "or" => Token::Or,
+            "OR" => Token::Or,
+            "nor" => Token::Nor,
+            "NOR" => Token::Nor,
+            "xor" => Token::Xor,
+            "XOR" => Token::Xor,
         };
         if let Some(keyword) = KEYWORDS.get(possible_keyword).cloned() {
             return keyword;
         }
-        TokenType::KeywordNotFound
+        Token::KeywordNotFound
     }
 }
 
-impl Token {
-    fn new(typ: TokenType, start: usize, length: usize) -> Self {
-        Self { typ, start, length }
-    }
-}
-
-impl fmt::Display for Token {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self.typ {
-            TokenType::Or => write!(f, "OR"),
-            TokenType::And => write!(f, "AND"),
-            TokenType::Xor => write!(f, "XOR"),
-            TokenType::Nor => write!(f, "NOR"),
-            TokenType::Eof => write!(f, "EOF"),
-            TokenType::Plus => write!(f, "+"),
-            TokenType::Minus => write!(f, "-"),
-            TokenType::Error => write!(f, "Error"),
-            TokenType::LeftParen => write!(f, "("),
-            TokenType::RightParen => write!(f, ")"),
-            TokenType::ShiftLeft => write!(f, "<<"),
-            TokenType::ShiftRight => write!(f, ">>"),
-            TokenType::DecimalNumber => write!(f, "DecimalNumber"),
-            TokenType::BinaryNumber => write!(f, "BinaryNumber"),
-            TokenType::HexNumber => write!(f, "HexNumber"),
-            TokenType::KeywordNotFound => write!(f, "KeywordNotFound"),
-        }
-    }
-}
+//impl fmt::Display for Token {
+//    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//        match self.typ {
+//            TokenType::Or => write!(f, "OR"),
+//            TokenType::And => write!(f, "AND"),
+//            TokenType::Xor => write!(f, "XOR"),
+//            TokenType::Nor => write!(f, "NOR"),
+//            TokenType::Eof => write!(f, "EOF"),
+//            TokenType::Plus => write!(f, "+"),
+//            TokenType::Minus => write!(f, "-"),
+//            TokenType::Error => write!(f, "Error"),
+//            TokenType::LeftParen => write!(f, "("),
+//            TokenType::RightParen => write!(f, ")"),
+//            TokenType::ShiftLeft => write!(f, "<<"),
+//            TokenType::ShiftRight => write!(f, ">>"),
+//            TokenType::DecimalNumber(_) => write!(f, "DecimalNumber"),
+//            TokenType::BinaryNumber(_) => write!(f, "BinaryNumber"),
+//            TokenType::HexNumber(_) => write!(f, "HexNumber"),
+//            TokenType::KeywordNotFound => write!(f, "KeywordNotFound"),
+//        }
+//    }
+//}
 
 #[cfg(test)]
 mod tests {
@@ -367,85 +344,85 @@ mod tests {
 
     #[test]
     fn test_peek_char_behaviour() {
-        let mut sc = Scanner::new("(1 + 1)");
-        assert_eq!(sc.next(), Token::new(TokenType::LeftParen, 0, 1));
-        assert_eq!(sc.next(), Token::new(TokenType::DecimalNumber, 1, 2));
-        assert_eq!(sc.next(), Token::new(TokenType::Plus, 3, 4));
-        assert_eq!(sc.next(), Token::new(TokenType::DecimalNumber, 5, 6));
-        assert_eq!(sc.next(), Token::new(TokenType::RightParen, 6, 7));
+        let mut sc = Scanner::new("(12 + 12)");
+        assert_eq!(sc.next(), Token::LeftParen);
+        assert_eq!(sc.next(), Token::DecimalNumber("12".to_string()));
+        assert_eq!(sc.next(), Token::Plus);
+        assert_eq!(sc.next(), Token::DecimalNumber("12".to_string()));
+        assert_eq!(sc.next(), Token::RightParen);
     }
 
-    #[test]
-    fn test_whitespaces_only() {
-        let mut sc = Scanner::new("  ");
-        assert_eq!(sc.next(), Token::new(TokenType::Eof, 2, 2));
-    }
-
-    #[test]
-    fn test_single_character_token() {
-        let mut sc = Scanner::new("(");
-        assert_eq!(sc.next(), Token::new(TokenType::LeftParen, 0, 1));
-    }
-
-    #[test]
-    fn test_shift_right() {
-        let mut sc = Scanner::new(">>");
-        assert_eq!(sc.next(), Token::new(TokenType::ShiftRight, 0, 2));
-    }
-
-    #[test]
-    fn test_few_parens() {
-        let mut sc = Scanner::new("()()");
-        assert_eq!(sc.next(), Token::new(TokenType::LeftParen, 0, 1));
-        assert_eq!(sc.next(), Token::new(TokenType::RightParen, 1, 2));
-        assert_eq!(sc.next(), Token::new(TokenType::LeftParen, 2, 3));
-        assert_eq!(sc.next(), Token::new(TokenType::RightParen, 3, 4));
-    }
-
-    #[test]
-    fn test_dec_number() {
-        let mut sc = Scanner::new("1234");
-        assert_eq!(sc.next(), Token::new(TokenType::DecimalNumber, 0, 4));
-    }
-
-    #[test]
-    fn test_hex_number() {
-        let mut sc = Scanner::new("0x1234");
-        assert_eq!(sc.next(), Token::new(TokenType::HexNumber, 0, 6));
-    }
-
-    #[test]
-    fn test_bin_number() {
-        let mut sc = Scanner::new("0b1010");
-        assert_eq!(sc.next(), Token::new(TokenType::BinaryNumber, 0, 6));
-    }
-
-    #[test]
-    fn test_xor_keyword() {
-        let mut sc = Scanner::new("XOR");
-        assert_eq!(sc.next(), Token::new(TokenType::Xor, 0, 3));
-    }
-
-    #[test]
-    fn test_shifts() {
-        let mut sc = Scanner::new(">><<");
-        assert_eq!(sc.next(), Token::new(TokenType::ShiftRight, 0, 2));
-        assert_eq!(sc.next(), Token::new(TokenType::ShiftLeft, 2, 4));
-    }
-
-    #[test]
-    fn test_complete() {
-        let input = "()0x1234 << 10";
-        let mut sc = Scanner::new(input);
-        assert_eq!(sc.next(), Token::new(TokenType::LeftParen, 0, 1));
-        assert_eq!(sc.next(), Token::new(TokenType::RightParen, 1, 2));
-        assert_eq!(sc.next(), Token::new(TokenType::HexNumber, 2, 8));
-        assert_eq!(sc.next(), Token::new(TokenType::ShiftLeft, 9, 11));
-        assert_eq!(
-            sc.next(),
-            Token::new(TokenType::DecimalNumber, 12, input.len())
-        );
-    }
+//    #[test]
+//    fn test_whitespaces_only() {
+//        let mut sc = Scanner::new("  ");
+//        assert_eq!(sc.next(), Token::new(TokenType::Eof, 2, 2));
+//    }
+//
+//    #[test]
+//    fn test_single_character_token() {
+//        let mut sc = Scanner::new("(");
+//        assert_eq!(sc.next(), Token::new(TokenType::LeftParen, 0, 1));
+//    }
+//
+//    #[test]
+//    fn test_shift_right() {
+//        let mut sc = Scanner::new(">>");
+//        assert_eq!(sc.next(), Token::new(TokenType::ShiftRight, 0, 2));
+//    }
+//
+//    #[test]
+//    fn test_few_parens() {
+//        let mut sc = Scanner::new("()()");
+//        assert_eq!(sc.next(), Token::new(TokenType::LeftParen, 0, 1));
+//        assert_eq!(sc.next(), Token::new(TokenType::RightParen, 1, 2));
+//        assert_eq!(sc.next(), Token::new(TokenType::LeftParen, 2, 3));
+//        assert_eq!(sc.next(), Token::new(TokenType::RightParen, 3, 4));
+//    }
+//
+//    #[test]
+//    fn test_dec_number() {
+//        let mut sc = Scanner::new("1234");
+//        assert_eq!(sc.next(), Token::new(TokenType::DecimalNumber, 0, 4));
+//    }
+//
+//    #[test]
+//    fn test_hex_number() {
+//        let mut sc = Scanner::new("0x1234");
+//        assert_eq!(sc.next(), Token::new(TokenType::HexNumber, 0, 6));
+//    }
+//
+//    #[test]
+//    fn test_bin_number() {
+//        let mut sc = Scanner::new("0b1010");
+//        assert_eq!(sc.next(), Token::new(TokenType::BinaryNumber, 0, 6));
+//    }
+//
+//    #[test]
+//    fn test_xor_keyword() {
+//        let mut sc = Scanner::new("XOR");
+//        assert_eq!(sc.next(), Token::new(TokenType::Xor, 0, 3));
+//    }
+//
+//    #[test]
+//    fn test_shifts() {
+//        let mut sc = Scanner::new(">><<");
+//        assert_eq!(sc.next(), Token::new(TokenType::ShiftRight, 0, 2));
+//        assert_eq!(sc.next(), Token::new(TokenType::ShiftLeft, 2, 4));
+//    }
+//
+//    #[test]
+//    fn test_complete() {
+//        let input = "()0x1234 << 10";
+//        let mut sc = Scanner::new(input);
+//        assert_eq!(sc.next(), Token::new(TokenType::LeftParen, 0, 1));
+//        assert_eq!(sc.next(), Token::new(TokenType::RightParen, 1, 2));
+//        assert_eq!(sc.next(), Token::new(TokenType::HexNumber, 2, 8));
+//        assert_eq!(sc.next(), Token::new(TokenType::ShiftLeft, 9, 11));
+//        assert_eq!(
+//            sc.next(),
+//            Token::new(TokenType::DecimalNumber, 12, input.len())
+//        );
+//    }
 //
 //    #[test]
 //    fn test_extended() {
