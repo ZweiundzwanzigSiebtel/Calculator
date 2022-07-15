@@ -192,4 +192,15 @@ mod tests {
         println!("finished");
         let _ = child.join();
     }
+    
+    fn test_simple() {
+        let mut p = Parser::new("1 + 1");
+        assert_eq!("(+ DecimalNumber DecimalNumber)", p.parse(&"1 + 1").to_string());
+    }
+
+    #[test]
+    fn test_parens() {
+        let mut p = Parser::new("(1 + 1) << 5");
+        println!("total result is >>> {}", p.parse(&"1 + 1 << 5").to_string());
+    }
 }
