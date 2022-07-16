@@ -7,4 +7,3 @@ edition = "2021"
 
 [dependencies]
 rustyline = "9.1.0"
-phf = { version = "0.10", features = ["macros"] }
