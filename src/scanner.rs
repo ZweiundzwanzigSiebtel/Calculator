@@ -294,6 +294,12 @@ impl<'a> Scanner<'a> {
     }
 }
 
+/// calculates the decimal value of the input of base `base`.
+///
+/// # Example:
+/// assert_eq!(str_to_dec("1234", 10), 1234);
+/// assert_eq!(str_to_dec("1010", 2), 10);
+/// assert_eq!(str_to_dec("ff", 16), 255);
 fn str_to_dec(value: &str, base: u32) -> u32 {
     let mut iter = value.chars();
     let mut result: u32 = 0;
