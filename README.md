@@ -6,6 +6,7 @@ I use this tool a lot, but it has its limitations.
 ## TODO
 
 - [x] from parser create AST then evaluate AST expression.
+- [ ] add better error handling. Add pre and postconditions!
 - [ ] binary, dec and hex output
 - [ ] support for binary operators XOR, NOR, AND, OR, << and >>.
 - [ ] config file (e.g. always show binary representation);
