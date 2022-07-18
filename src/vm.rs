@@ -25,9 +25,9 @@ impl VM {
                 Token::BinaryNumber(x) | Token::DecimalNumber(x) | Token::HexNumber(x) => self.stack.push(*x),
                 op if op.is_operator() => {
                     let result;
-                    if op == &Token::Bang {
-                        let lhs = self.stack.pop().unwrap();
-                        result = self.clone().apply_operator(op, lhs, 0);
+                    if op == &Token::Bang || op == &Token::TwosComplement {
+                        let val = self.stack.pop().unwrap();
+                        result = self.clone().apply_operator(op, val, 0);
                     } else {
                         let lhs = self.stack.pop().unwrap();
                         let rhs = self.stack.pop().unwrap();
@@ -53,6 +53,7 @@ impl VM {
             Token::ShiftLeft => lhs << rhs,
             Token::ShiftRight => lhs >> rhs,
             Token::Bang => !rhs,
+            Token::TwosComplement => (!rhs) + 1,
             err => panic!("unexpected operator: {:?}", err),
         }
     }
@@ -103,5 +104,11 @@ mod tests {
     fn test_unary() {
         let mut vm = VM::new();
         assert_eq!(!1_u64, vm.run("!1"));
+    }
+
+    #[test]
+    fn test_twos_complement() {
+        let mut vm = VM::new();
+        assert_eq!(!(1_u64)+1, vm.run("~1"));
     }
 }

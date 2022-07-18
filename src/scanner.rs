@@ -17,6 +17,7 @@ pub enum Token {
     Minus,
     Plus,
     Bang,
+    TwosComplement,
 
     //more character Tokens
     ShiftLeft,
@@ -106,6 +107,10 @@ impl<'a> Scanner<'a> {
                         }
                         Some('!') => {
                             result_token = Token::Bang;
+                            break;
+                        }
+                        Some('~') => {
+                            result_token = Token::TwosComplement;
                             break;
                         }
                         Some('>') => state = State::ExpectShiftRight,
@@ -298,7 +303,7 @@ impl<'a> Scanner<'a> {
 impl Token {
     pub fn is_operator(&self) -> bool {
         match self {
-            Token::Plus | Token::Minus | Token::And | Token::Or | Token::Nor | Token::Xor | Token::ShiftLeft | Token::ShiftRight | Token::Bang => true,
+            Token::Plus | Token::Minus | Token::And | Token::Or | Token::Nor | Token::Xor | Token::ShiftLeft | Token::ShiftRight | Token::Bang | Token::TwosComplement => true,
             _ => false,
         }
     }

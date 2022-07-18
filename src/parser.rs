@@ -34,7 +34,7 @@ impl<'a> Parser {
                 lhs
             },
             //currently only a Minus Token is allowed as prefix
-            Token::Minus | Token::Bang => {
+            Token::TwosComplement | Token::Bang => {
                 let ((), r_bp) = self.prefix_binding_power(&next);
                 let mut rhs = self.parser_worker(scanner, r_bp);
                 rhs.append(&mut vec![next]);
@@ -89,6 +89,7 @@ impl<'a> Parser {
         match op {
             Token::Minus => ((), 13),
             Token::Bang => ((), 13),
+            Token::TwosComplement => ((), 13),
             _ => panic!("bad token {:?}", &op),
         }
     }
