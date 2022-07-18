@@ -1,27 +1,18 @@
 use rustyline::error::ReadlineError;
 use rustyline::{Editor, Result};
 
-use std::thread;
-use std::sync::mpsc::{self, channel, Sender, Receiver};
-
 mod scanner;
 mod parser;
 mod vm;
-
-use scanner::{Scanner, Token};
+use vm::VM;
 
 fn main() -> Result<()> {
 
     let args: Vec<_> = std::env::args().collect();
-    let file_name = args.get(1).unwrap();
-    let file_content = std::fs::read_to_string(file_name).unwrap();
-
-    let mut sc = Scanner::new(&file_content);
-    let start = std::time::Instant::now();
-    while sc.next() != Token::Eof {
-        println!("{:?}", sc.next());
+    if let Some(file_name) = args.get(1) {
+        let file_content = std::fs::read_to_string(file_name).unwrap();
     }
-    println!("finished in: {:?}", start.elapsed());
+    let mut vm = VM::new();
 
     // `()` can be used when n,o completer is required
     let mut rl = Editor::<()>::new();
@@ -32,9 +23,9 @@ fn main() -> Result<()> {
         let readline = rl.readline(">>> ");
         match readline {
             Ok(line) => {
-
+                let result = vm.run(&line);
                 rl.add_history_entry(line.as_str());
-                println!("Line: {}", line);
+                println!("{}", result);
             }
             Err(ReadlineError::Interrupted) => {
                 println!("CTRL-C");
