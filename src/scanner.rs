@@ -9,7 +9,7 @@ pub struct Scanner<'a> {
 
 const EOF_CHAR: char = '\0';
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Copy, Clone)]
 pub enum Token {
     //single-character Tokens
     LeftParen,
@@ -323,7 +323,7 @@ fn str_to_dec(value: &str, base: u32) -> u32 {
 impl Token {
     pub fn is_operator(&self) -> bool {
         match self {
-            Token::Plus | Token::Minus | Token::And | Token::Or | Token::Nor | Token::Xor => true,
+            Token::Plus | Token::Minus | Token::And | Token::Or | Token::Nor | Token::Xor | Token::ShiftLeft | Token::ShiftRight => true,
             _ => false,
         }
     }
