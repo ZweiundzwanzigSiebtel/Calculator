@@ -19,6 +19,7 @@ Currently the following operations are supported:
 - |/or/OR for binary or
 - ^/xor/XOR for binary xor
 - nor/NOR for binary nor
+- mod/MOD/% for modulo
 - ! for negation (1's complement)
 - ~ for 2's complement
 - parens for nested expressions
