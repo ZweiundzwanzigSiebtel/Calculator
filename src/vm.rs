@@ -24,9 +24,15 @@ impl VM {
             match item {
                 Token::BinaryNumber(x) | Token::DecimalNumber(x) | Token::HexNumber(x) => self.stack.push(*x),
                 op if op.is_operator() => {
-                    let lhs = self.stack.pop().unwrap();
-                    let rhs = self.stack.pop().unwrap();
-                    let result = self.clone().apply_operator(op, lhs, rhs);
+                    let result;
+                    if op == &Token::Bang {
+                        let lhs = self.stack.pop().unwrap();
+                        result = self.clone().apply_operator(op, lhs, 0);
+                    } else {
+                        let lhs = self.stack.pop().unwrap();
+                        let rhs = self.stack.pop().unwrap();
+                        result = self.clone().apply_operator(op, lhs, rhs);
+                    }
                     self.stack.push(result);
                 },
                 err => panic!("err: {:?}", err),
@@ -46,6 +52,7 @@ impl VM {
             Token::Xor => lhs ^ rhs,
             Token::ShiftLeft => lhs << rhs,
             Token::ShiftRight => lhs >> rhs,
+            Token::Bang => !rhs,
             err => panic!("unexpected operator: {:?}", err),
         }
     }
@@ -93,8 +100,8 @@ mod tests {
     }
 
     #[test]
-    fn test_unary_expr() {
+    fn test_unary() {
         let mut vm = VM::new();
-        assert_eq!(-1 + 2, vm.run("-1 + 2"));
+        assert_eq!(!1_u64, vm.run("!1"));
     }
 }

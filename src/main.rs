@@ -4,6 +4,7 @@ use rustyline::{Editor, Result};
 mod scanner;
 mod parser;
 mod vm;
+
 use vm::VM;
 
 fn main() -> Result<()> {

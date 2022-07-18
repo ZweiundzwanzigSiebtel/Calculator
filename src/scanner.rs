@@ -16,6 +16,7 @@ pub enum Token {
     RightParen,
     Minus,
     Plus,
+    Bang,
 
     //more character Tokens
     ShiftLeft,
@@ -101,6 +102,10 @@ impl<'a> Scanner<'a> {
                         }
                         Some('^') => {
                             result_token = Token::Xor;
+                            break;
+                        }
+                        Some('!') => {
+                            result_token = Token::Bang;
                             break;
                         }
                         Some('>') => state = State::ExpectShiftRight,
@@ -290,6 +295,29 @@ impl<'a> Scanner<'a> {
     }
 }
 
+impl Token {
+    pub fn is_operator(&self) -> bool {
+        match self {
+            Token::Plus | Token::Minus | Token::And | Token::Or | Token::Nor | Token::Xor | Token::ShiftLeft | Token::ShiftRight | Token::Bang => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_operand(&self) -> bool {
+        match self {
+            Token::DecimalNumber(_) | Token::BinaryNumber(_) | Token::HexNumber(_) => true,
+            _ => false,
+        }
+    }
+
+    pub fn get_value(&self) -> Option<u64> {
+        match self {
+            Token::DecimalNumber(v) | Token::BinaryNumber(v) | Token::HexNumber(v) => Some(*v),
+            _ => None,
+        }
+    }
+}
+
 /// calculates the decimal value of the input of base `base`.
 ///
 /// # Example:
@@ -351,28 +379,6 @@ fn is_delimiter(c: char) -> bool {
     )
 }
 
-impl Token {
-    pub fn is_operator(&self) -> bool {
-        match self {
-            Token::Plus | Token::Minus | Token::And | Token::Or | Token::Nor | Token::Xor | Token::ShiftLeft | Token::ShiftRight => true,
-            _ => false,
-        }
-    }
-
-    pub fn is_operand(&self) -> bool {
-        match self {
-            Token::DecimalNumber(_) | Token::BinaryNumber(_) | Token::HexNumber(_) => true,
-            _ => false,
-        }
-    }
-
-    pub fn get_value(&self) -> Option<u64> {
-        match self {
-            Token::DecimalNumber(v) | Token::BinaryNumber(v) | Token::HexNumber(v) => Some(*v),
-            _ => None,
-        }
-    }
-}
 
 //impl fmt::Display for Token {
 //    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

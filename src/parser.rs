@@ -34,11 +34,9 @@ impl<'a> Parser {
                 lhs
             },
             //currently only a Minus Token is allowed as prefix
-            Token::Minus => {
+            Token::Minus | Token::Bang => {
                 let ((), r_bp) = self.prefix_binding_power(&next);
                 let mut rhs = self.parser_worker(scanner, r_bp);
-//                self.res.append(&mut rhs.clone());
-//                self.res.append(&mut vec![next.clone()]);
                 rhs.append(&mut vec![next]);
                 rhs
             },
@@ -48,19 +46,7 @@ impl<'a> Parser {
         loop {
             let op = match scanner.peek() {
                 eof if eof == Token::Eof => break,
-                operator
-                    if operator == Token::Plus
-                        || operator == Token::Minus
-                        || operator == Token::And
-                        || operator == Token::Or
-                        || operator == Token::Nor
-                        || operator == Token::Xor
-                        || operator == Token::ShiftRight
-                        || operator == Token::ShiftLeft 
-                        || operator == Token::LeftParen
-                        || operator == Token::RightParen => {
-                            operator
-                        },
+                operator if operator.is_operator() => operator,
                 rest => panic!("bad token >>> {:?}", rest),
             };
             //now compute the binding power of the just fetched operator
@@ -102,6 +88,7 @@ impl<'a> Parser {
     fn prefix_binding_power(&self, op: &Token) -> ((), u8) {
         match op {
             Token::Minus => ((), 13),
+            Token::Bang => ((), 13),
             _ => panic!("bad token {:?}", &op),
         }
     }
@@ -112,10 +99,10 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_mpsc() {
-        let mut p = Parser::new("-1");
+    fn test_bang() {
+        let mut p = Parser::new("!5");
         let result = p.parse();
-        assert_eq!(vec![Token::DecimalNumber(1), Token::Minus], result);
+        assert_eq!(vec![Token::DecimalNumber(5), Token::Bang], result);
     }
 
     #[test]
