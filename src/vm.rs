@@ -2,14 +2,14 @@ use crate::scanner::Token;
 use crate::parser::Parser;
 
 #[derive(Debug, Clone)]
-struct VM {
+pub struct VM {
     parse_expression: Vec<Token>,
-    stack: Vec<u32>,
-    result: u32,
+    stack: Vec<u64>,
+    result: u64,
 }
 
 impl VM {
-    fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             parse_expression: Vec::new(),
             stack: Vec::new(),
@@ -17,7 +17,7 @@ impl VM {
         }
     }
 
-    fn run(&mut self, input: &str) -> u32 {
+    pub fn run(&mut self, input: &str) -> u64 {
         let mut parser = Parser::new(&input);
         self.parse_expression.append(&mut parser.parse());
         for item in &self.parse_expression {
@@ -36,7 +36,7 @@ impl VM {
         self.stack.pop().unwrap()
     }
 
-    fn apply_operator(&mut self, operator: &Token, rhs: u32, lhs: u32) -> u32 {
+    fn apply_operator(&mut self, operator: &Token, rhs: u64, lhs: u64) -> u64 {
         match operator {
             Token::Plus => lhs + rhs,
             Token::Minus => lhs - rhs,
@@ -83,12 +83,18 @@ mod tests {
     #[test]
     fn test_expression_2() {
         let mut vm = VM::new();
-        assert_eq!(1 + 2 + 3 - 4, vm.run("1 + 2 + 3 - 4"));
+        assert_eq!(1 + 2 + 3 - 4, vm.run("1+2+3-4"));
     }
 
     #[test]
     fn test_hex_expr() {
         let mut vm = VM::new();
         assert_eq!(0xff & 0xf1, vm.run("0xff&0xf1"));
+    }
+
+    #[test]
+    fn test_unary_expr() {
+        let mut vm = VM::new();
+        assert_eq!(-1 + 2, vm.run("-1 + 2"));
     }
 }

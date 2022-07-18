@@ -111,13 +111,13 @@ impl<'a> Parser {
 mod tests {
     use super::*;
 
-//    #[test]
-//    fn test_mpsc() {
-//        let mut p = Parser::new("(1 + 1) << 5");
-//        let result = p.parse();
-//        assert_eq!(vec![Token::DecimalNumber(1), Token::DecimalNumber(1), Token::Plus], result);
-//    }
-//
+    #[test]
+    fn test_mpsc() {
+        let mut p = Parser::new("-1");
+        let result = p.parse();
+        assert_eq!(vec![Token::DecimalNumber(1), Token::Minus], result);
+    }
+
     #[test]
     fn test_nested() {
         let mut p = Parser::new("1 and 2 + 3 and 4 + 5");

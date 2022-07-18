@@ -22,9 +22,9 @@ pub enum Token {
     ShiftRight,
 
     //Literals
-    BinaryNumber(u32),
-    DecimalNumber(u32),
-    HexNumber(u32),
+    BinaryNumber(u64),
+    DecimalNumber(u64),
+    HexNumber(u64),
 
     //Keywords
     And,
@@ -296,20 +296,20 @@ impl<'a> Scanner<'a> {
 /// assert_eq!(str_to_dec("1234", 10), 1234);
 /// assert_eq!(str_to_dec("1010", 2), 10);
 /// assert_eq!(str_to_dec("ff", 16), 255);
-fn str_to_dec(value: &str, base: u32) -> u32 {
+fn str_to_dec(value: &str, base: u64) -> u64 {
     let mut iter = value.chars();
-    let mut result: u32 = 0;
+    let mut result: u64 = 0;
     let max_pow = value.len();
     for power in (0..max_pow).rev() {
         if let Some(ch) = iter.next() {
             match ch {
-                c @ '0'..='9' => result += c.to_digit(10).unwrap() * base.pow(power.try_into().unwrap()),
-                'a' | 'A' => result += 10_u32 * base.pow(power.try_into().unwrap()),
-                'b' | 'B' => result += 11_u32 * base.pow(power.try_into().unwrap()),
-                'c' | 'C' => result += 12_u32 * base.pow(power.try_into().unwrap()),
-                'd' | 'D' => result += 13_u32 * base.pow(power.try_into().unwrap()),
-                'e' | 'E' => result += 14_u32 * base.pow(power.try_into().unwrap()),
-                'f' | 'F' => result += 15_u32 * base.pow(power.try_into().unwrap()),
+                c @ '0'..='9' => result += (c.to_digit(10).unwrap() as u64) * base.pow(power.try_into().unwrap()),
+                'a' | 'A' => result += 10_u64 * base.pow(power.try_into().unwrap()),
+                'b' | 'B' => result += 11_u64 * base.pow(power.try_into().unwrap()),
+                'c' | 'C' => result += 12_u64 * base.pow(power.try_into().unwrap()),
+                'd' | 'D' => result += 13_u64 * base.pow(power.try_into().unwrap()),
+                'e' | 'E' => result += 14_u64 * base.pow(power.try_into().unwrap()),
+                'f' | 'F' => result += 15_u64 * base.pow(power.try_into().unwrap()),
                 _ => panic!("didn't expect that"),
             }
         }
@@ -366,7 +366,7 @@ impl Token {
         }
     }
 
-    pub fn get_value(&self) -> Option<u32> {
+    pub fn get_value(&self) -> Option<u64> {
         match self {
             Token::DecimalNumber(v) | Token::BinaryNumber(v) | Token::HexNumber(v) => Some(*v),
             _ => None,
