@@ -91,6 +91,18 @@ impl<'a> Scanner<'a> {
                             result_token = Token::Minus;
                             break;
                         }
+                        Some('&') => {
+                            result_token = Token::And;
+                            break;
+                        }
+                        Some('|') => {
+                            result_token = Token::Or;
+                            break;
+                        }
+                        Some('^') => {
+                            result_token = Token::Xor;
+                            break;
+                        }
                         Some('>') => state = State::ExpectShiftRight,
                         Some('<') => state = State::ExpectShiftLeft,
                         Some('0') => state = State::ExpectBase,
@@ -269,10 +281,10 @@ impl<'a> Scanner<'a> {
 
     fn get_keyword(&mut self, possible_keyword: &str) -> Token {
         match possible_keyword {
-            "and" | "AND" => Token::And, 
-            "or" | "OR" => Token::Or, 
+            "and" | "AND" | "&" => Token::And, 
+            "or" | "OR" | "|" => Token::Or, 
             "nor" | "NOR" => Token::Nor, 
-            "xor" | "XOR" => Token::Xor, 
+            "xor" | "XOR" | "^" => Token::Xor, 
             _ => Token::KeywordNotFound,
         }
     }

@@ -58,36 +58,37 @@ mod tests {
     #[test]
     fn test_1_plus_1() {
         let mut vm = VM::new();
-        vm.run("1 + 1");
-        assert_eq!(vec![1+1], vm.stack);
+        assert_eq!(1+1, vm.run("1+1"));
     }
 
 
     #[test]
     fn test_nested() {
         let mut vm = VM::new();
-        vm.run("1 and 2 + 3 and 4 + 5");
-        assert_eq!(vec![(1&(2+3)&(4+5))], vm.stack);
+        assert_eq!((1&(2+3)&(4+5)), vm.run("1 and 2 + 3 and 4 + 5"));
     }
 
     #[test]
     fn test_extended() {
         let mut vm = VM::new();
-        vm.run("1 + 2 + 3 + 4 + 5");
-        assert_eq!(vec![1+2+3+4+5], vm.stack);
+        assert_eq!(1+2+3+4+5, vm.run("1 + 2 + 3 + 4 + 5"));
     }
 
     #[test]
     fn test_expression() {
         let mut vm = VM::new();
-        vm.run("0b01 << 2");
-        assert_eq!(vec![0b01 << 2], vm.stack);
+        assert_eq!(0b01 << 2, vm.run("0b01 << 2"));
     }
 
     #[test]
     fn test_expression_2() {
         let mut vm = VM::new();
-        vm.run("1 + 2 + 3 - 4");
-        assert_eq!(vec![1 + 2 + 3 - 4], vm.stack);
+        assert_eq!(1 + 2 + 3 - 4, vm.run("1 + 2 + 3 - 4"));
+    }
+
+    #[test]
+    fn test_hex_expr() {
+        let mut vm = VM::new();
+        assert_eq!(0xff & 0xf1, vm.run("0xff&0xf1"));
     }
 }
