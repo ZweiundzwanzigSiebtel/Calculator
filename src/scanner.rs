@@ -146,7 +146,7 @@ impl<'a> Scanner<'a> {
                         'a'..='z' | 'A'..='Z' => {
                             self.buffer.next();
                         },
-                        ch if ch.is_whitespace() => {
+                        ch if is_delimiter(ch) => {
                             let start = self.initial_len - token_start;
                             let token_len = self.initial_len - self.buffer.as_str().len();
                             result_token = self.get_keyword(&self.clone().lookup[start..token_len]);
@@ -181,11 +181,7 @@ impl<'a> Scanner<'a> {
                         state = State::DecimalNumber;
                         self.buffer.next();
                     },
-                    ch if ch.is_whitespace()
-                            || ch == ')'
-                            || ch == '('
-                            || ch == '>'
-                            || ch == '<' => {
+                    ch if is_delimiter(ch) => {
                         let start = self.initial_len - token_start;
                         let token_len = self.initial_len - self.buffer.as_str().len();
                         result_token = Token::DecimalNumber(self.lookup[start..token_len].parse().unwrap());
@@ -209,13 +205,7 @@ impl<'a> Scanner<'a> {
                         state = State::BinaryNumber;
                         self.buffer.next();
                     },
-                    ch
-                        if ch.is_whitespace()
-                            || ch == ')'
-                            || ch == '('
-                            || ch == '>'
-                            || ch == '<' =>
-                    {
+                    ch if is_delimiter(ch) => {
                         let start = self.initial_len - token_start;
                         let token_len = self.initial_len - self.buffer.as_str().len();
                         result_token = Token::BinaryNumber(str_to_dec(&self.lookup[start+2..token_len], 2));
@@ -239,12 +229,7 @@ impl<'a> Scanner<'a> {
                         state = State::HexNumber;
                         self.buffer.next();
                     },
-                    ch if ch.is_whitespace()
-                            || ch == ')'
-                            || ch == '('
-                            || ch == '>'
-                            || ch == '<' =>
-                    {
+                    ch if is_delimiter(ch) => {
                         let start = self.initial_len - token_start;
                         let token_len = self.initial_len - self.buffer.as_str().len();
                         result_token = Token::HexNumber(str_to_dec(&self.lookup[start+2..token_len], 16));
@@ -320,6 +305,40 @@ fn str_to_dec(value: &str, base: u32) -> u32 {
     result
 } 
 
+fn is_delimiter(c: char) -> bool {
+    matches!(c,
+             '('
+            | ')'
+            | '>'
+            | '<'
+            | '+'
+            | '-'
+            | '&'
+            | '|'
+            | '~'
+            | '!'
+            | '^'
+             //whitespaces:
+            | '\u{0009}'   // \t
+            | '\u{000A}' // \n
+            | '\u{000B}' // vertical tab
+            | '\u{000C}' // form feed
+            | '\u{000D}' // \r
+            | '\u{0020}' // space
+
+            // NEXT LINE from latin1
+            | '\u{0085}'
+
+            // Bidi markers
+            | '\u{200E}' // LEFT-TO-RIGHT MARK
+            | '\u{200F}' // RIGHT-TO-LEFT MARK
+
+            // Dedicated whitespace characters from Unicode
+            | '\u{2028}' // LINE SEPARATOR
+            | '\u{2029}'
+    )
+}
+
 impl Token {
     pub fn is_operator(&self) -> bool {
         match self {
@@ -369,6 +388,18 @@ impl Token {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_without_spaces() {
+        let mut sc = Scanner::new("1+2+3+4");
+        assert_eq!(Token::DecimalNumber(1), sc.next());
+        assert_eq!(Token::Plus, sc.next());
+        assert_eq!(Token::DecimalNumber(2), sc.next());
+        assert_eq!(Token::Plus, sc.next());
+        assert_eq!(Token::DecimalNumber(3), sc.next());
+        assert_eq!(Token::Plus, sc.next());
+        assert_eq!(Token::DecimalNumber(4), sc.next());
+    }
 
     #[test]
     fn test_string_to_hex() {
