@@ -74,6 +74,7 @@ impl<'a> Parser {
     /// ```
     fn infix_binding_power(&self, op: &Token) -> Option<(u8, u8)> {
         let res = match &op {
+            Token::Mult => (13, 14),
             Token::Plus | Token::Minus => (11, 12), //highest precedence
             Token::ShiftRight | Token::ShiftLeft => (9, 10),
             Token::And => (7, 8),
@@ -87,9 +88,7 @@ impl<'a> Parser {
 
     fn prefix_binding_power(&self, op: &Token) -> ((), u8) {
         match op {
-            Token::Minus => ((), 13),
-            Token::Bang => ((), 13),
-            Token::TwosComplement => ((), 13),
+            Token::Minus | Token::Bang | Token::TwosComplement => ((), 255),
             _ => panic!("bad token {:?}", &op),
         }
     }

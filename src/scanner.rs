@@ -18,6 +18,7 @@ pub enum Token {
     Plus,
     Bang,
     TwosComplement,
+    Mult,
 
     //more character Tokens
     ShiftLeft,
@@ -113,6 +114,10 @@ impl<'a> Scanner<'a> {
                             result_token = Token::TwosComplement;
                             break;
                         }
+                        Some('*') => {
+                            result_token = Token::Mult;
+                            break;
+                        }
                         Some('>') => state = State::ExpectShiftRight,
                         Some('<') => state = State::ExpectShiftLeft,
                         Some('0') => state = State::ExpectBase,
@@ -167,7 +172,7 @@ impl<'a> Scanner<'a> {
                     match next_char {
                         'a'..='z' | 'A'..='Z' => {
                             self.buffer.next();
-                        },
+                        }
                         ch if is_delimiter(ch) => {
                             let start = self.initial_len - token_start;
                             let token_len = self.initial_len - self.buffer.as_str().len();
@@ -202,17 +207,19 @@ impl<'a> Scanner<'a> {
                     '0'..='9' => {
                         state = State::DecimalNumber;
                         self.buffer.next();
-                    },
+                    }
                     ch if is_delimiter(ch) => {
                         let start = self.initial_len - token_start;
                         let token_len = self.initial_len - self.buffer.as_str().len();
-                        result_token = Token::DecimalNumber(self.lookup[start..token_len].parse().unwrap());
+                        result_token =
+                            Token::DecimalNumber(self.lookup[start..token_len].parse().unwrap());
                         break;
                     }
                     EOF_CHAR => {
                         let start = self.initial_len - token_start;
                         let token_len = self.initial_len - self.buffer.as_str().len();
-                        result_token = Token::DecimalNumber(self.lookup[start..token_len].parse().unwrap());
+                        result_token =
+                            Token::DecimalNumber(self.lookup[start..token_len].parse().unwrap());
                         break;
                     }
                     _ => {
@@ -226,17 +233,19 @@ impl<'a> Scanner<'a> {
                     '0'..='1' => {
                         state = State::BinaryNumber;
                         self.buffer.next();
-                    },
+                    }
                     ch if is_delimiter(ch) => {
                         let start = self.initial_len - token_start;
                         let token_len = self.initial_len - self.buffer.as_str().len();
-                        result_token = Token::BinaryNumber(str_to_dec(&self.lookup[start+2..token_len], 2));
+                        result_token =
+                            Token::BinaryNumber(str_to_dec(&self.lookup[start + 2..token_len], 2));
                         break;
                     }
                     EOF_CHAR => {
                         let start = self.initial_len - token_start;
                         let token_len = self.initial_len - self.buffer.as_str().len();
-                        result_token = Token::BinaryNumber(str_to_dec(&self.lookup[start+2..token_len], 2));
+                        result_token =
+                            Token::BinaryNumber(str_to_dec(&self.lookup[start + 2..token_len], 2));
                         break;
                     }
                     _ => {
@@ -250,17 +259,19 @@ impl<'a> Scanner<'a> {
                     '0'..='9' | 'a'..='f' | 'A'..='F' => {
                         state = State::HexNumber;
                         self.buffer.next();
-                    },
+                    }
                     ch if is_delimiter(ch) => {
                         let start = self.initial_len - token_start;
                         let token_len = self.initial_len - self.buffer.as_str().len();
-                        result_token = Token::HexNumber(str_to_dec(&self.lookup[start+2..token_len], 16));
+                        result_token =
+                            Token::HexNumber(str_to_dec(&self.lookup[start + 2..token_len], 16));
                         break;
                     }
                     EOF_CHAR => {
                         let start = self.initial_len - token_start;
                         let token_len = self.initial_len - self.buffer.as_str().len();
-                        result_token = Token::HexNumber(str_to_dec(&self.lookup[start+2..token_len], 16));
+                        result_token =
+                            Token::HexNumber(str_to_dec(&self.lookup[start + 2..token_len], 16));
                         break;
                     }
                     _ => {
@@ -291,10 +302,10 @@ impl<'a> Scanner<'a> {
 
     fn get_keyword(&mut self, possible_keyword: &str) -> Token {
         match possible_keyword {
-            "and" | "AND" | "&" => Token::And, 
-            "or" | "OR" | "|" => Token::Or, 
-            "nor" | "NOR" => Token::Nor, 
-            "xor" | "XOR" | "^" => Token::Xor, 
+            "and" | "AND" | "&" => Token::And,
+            "or" | "OR" | "|" => Token::Or,
+            "nor" | "NOR" => Token::Nor,
+            "xor" | "XOR" | "^" => Token::Xor,
             _ => Token::KeywordNotFound,
         }
     }
@@ -303,7 +314,17 @@ impl<'a> Scanner<'a> {
 impl Token {
     pub fn is_operator(&self) -> bool {
         match self {
-            Token::Plus | Token::Minus | Token::And | Token::Or | Token::Nor | Token::Xor | Token::ShiftLeft | Token::ShiftRight | Token::Bang | Token::TwosComplement => true,
+            Token::Plus
+            | Token::Minus
+            | Token::And
+            | Token::Or
+            | Token::Nor
+            | Token::Xor
+            | Token::ShiftLeft
+            | Token::ShiftRight
+            | Token::Bang
+            | Token::TwosComplement
+            | Token::Mult => true,
             _ => false,
         }
     }
@@ -336,7 +357,9 @@ fn str_to_dec(value: &str, base: u64) -> u64 {
     for power in (0..max_pow).rev() {
         if let Some(ch) = iter.next() {
             match ch {
-                c @ '0'..='9' => result += (c.to_digit(10).unwrap() as u64) * base.pow(power.try_into().unwrap()),
+                c @ '0'..='9' => {
+                    result += (c.to_digit(10).unwrap() as u64) * base.pow(power.try_into().unwrap())
+                }
                 'a' | 'A' => result += 10_u64 * base.pow(power.try_into().unwrap()),
                 'b' | 'B' => result += 11_u64 * base.pow(power.try_into().unwrap()),
                 'c' | 'C' => result += 12_u64 * base.pow(power.try_into().unwrap()),
@@ -348,11 +371,12 @@ fn str_to_dec(value: &str, base: u64) -> u64 {
         }
     }
     result
-} 
+}
 
 fn is_delimiter(c: char) -> bool {
-    matches!(c,
-             '('
+    matches!(
+        c,
+        '('
             | ')'
             | '>'
             | '<'
@@ -363,6 +387,7 @@ fn is_delimiter(c: char) -> bool {
             | '~'
             | '!'
             | '^'
+            | '*'
              //whitespaces:
             | '\u{0009}'   // \t
             | '\u{000A}' // \n
@@ -383,7 +408,6 @@ fn is_delimiter(c: char) -> bool {
             | '\u{2029}'
     )
 }
-
 
 //impl fmt::Display for Token {
 //    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -526,9 +550,7 @@ mod tests {
         assert_eq!(sc.next(), Token::RightParen);
         assert_eq!(sc.next(), Token::HexNumber(str_to_dec("1234", 16)));
         assert_eq!(sc.next(), Token::ShiftLeft);
-        assert_eq!(
-            sc.next(),
-            Token::DecimalNumber(10));
+        assert_eq!(sc.next(), Token::DecimalNumber(10));
     }
 
     #[test]
@@ -547,6 +569,14 @@ mod tests {
         assert_eq!(sc.next(), Token::BinaryNumber(str_to_dec("10", 2)));
         assert_eq!(sc.next(), Token::RightParen);
         assert_eq!(sc.next(), Token::ShiftLeft);
-        assert_eq!( sc.next(), Token::DecimalNumber(12));
+        assert_eq!(sc.next(), Token::DecimalNumber(12));
+    }
+
+    #[test]
+    fn test_mult_token() {
+        let mut sc = Scanner::new("5*3");
+        assert_eq!(sc.next(), Token::DecimalNumber(5));
+        assert_eq!(sc.next(), Token::Mult);
+        assert_eq!(sc.next(), Token::DecimalNumber(3));
     }
 }

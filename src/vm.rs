@@ -54,6 +54,7 @@ impl VM {
             Token::ShiftRight => lhs >> rhs,
             Token::Bang => !rhs,
             Token::TwosComplement => (!rhs) + 1,
+            Token::Mult => lhs * rhs,
             err => panic!("unexpected operator: {:?}", err),
         }
     }
@@ -110,5 +111,11 @@ mod tests {
     fn test_twos_complement() {
         let mut vm = VM::new();
         assert_eq!(!(1_u64)+1, vm.run("~1"));
+    }
+
+    #[test]
+    fn test_mult() {
+        let mut vm = VM::new();
+        assert_eq!(5*3, vm.run("5*3"));
     }
 }
