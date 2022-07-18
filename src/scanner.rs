@@ -19,6 +19,7 @@ pub enum Token {
     Bang,
     TwosComplement,
     Mult,
+    Modulo,
 
     //more character Tokens
     ShiftLeft,
@@ -116,6 +117,10 @@ impl<'a> Scanner<'a> {
                         }
                         Some('*') => {
                             result_token = Token::Mult;
+                            break;
+                        }
+                        Some('%') => {
+                            result_token = Token::Modulo;
                             break;
                         }
                         Some('>') => state = State::ExpectShiftRight,
@@ -306,6 +311,7 @@ impl<'a> Scanner<'a> {
             "or" | "OR" | "|" => Token::Or,
             "nor" | "NOR" => Token::Nor,
             "xor" | "XOR" | "^" => Token::Xor,
+            "mod" | "MOD" | "%" => Token::Modulo,
             _ => Token::KeywordNotFound,
         }
     }
@@ -326,6 +332,7 @@ impl Token {
             | Token::TwosComplement
             | Token::LeftParen
             | Token::RightParen
+            | Token::Modulo
             | Token::Mult => true,
             _ => false,
         }
@@ -390,6 +397,7 @@ fn is_delimiter(c: char) -> bool {
             | '!'
             | '^'
             | '*'
+            | '%'
              //whitespaces:
             | '\u{0009}'   // \t
             | '\u{000A}' // \n

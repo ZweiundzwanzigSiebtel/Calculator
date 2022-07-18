@@ -73,6 +73,7 @@ impl<'a> Parser {
     /// ```
     fn infix_binding_power(&self, op: &Token) -> Option<(u8, u8)> {
         let res = match &op {
+            Token::Modulo => (13, 14),
             Token::Mult => (13, 14),
             Token::Plus | Token::Minus => (11, 12), //highest precedence
             Token::ShiftRight | Token::ShiftLeft => (9, 10),
