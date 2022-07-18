@@ -1,4 +1,3 @@
-use std::fmt;
 use std::str::Chars;
 
 #[derive(Clone)]
@@ -319,6 +318,29 @@ fn str_to_dec(value: &str, base: u32) -> u32 {
         }
     }
     result
+} 
+
+impl Token {
+    pub fn is_operator(&self) -> bool {
+        match self {
+            Token::Plus | Token::Minus | Token::And | Token::Or | Token::Nor | Token::Xor => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_operand(&self) -> bool {
+        match self {
+            Token::DecimalNumber(_) | Token::BinaryNumber(_) | Token::HexNumber(_) => true,
+            _ => false,
+        }
+    }
+
+    pub fn get_value(&self) -> Option<u32> {
+        match self {
+            Token::DecimalNumber(v) | Token::BinaryNumber(v) | Token::HexNumber(v) => Some(*v),
+            _ => None,
+        }
+    }
 }
 
 //impl fmt::Display for Token {

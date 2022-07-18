@@ -35,13 +35,32 @@ impl VM {
     }
 
     fn handle_plus(&mut self) {
+        if let Some(next) = self.stack.pop() {
+            match next {
+                op if next.is_operator() => {
+                    self.handle_operator(op);
+                },
+                val if next.is_operand() => {
+                    let lhs = val.get_value().unwrap();
+                    let rhs = self.stack.pop().unwrap().get_value().unwrap();
+                    let result = lhs + rhs;
+                    if let Some(pending_op) = self.pending_operators.pop() {
+                        self.stack.push(Token::DecimalNumber(result));
+                        self.stack.push(pending_op);
+                    }
+                    self.result = result;
+                }
+                _ => panic!(""),
+            }
+        }
     }
 
     fn handle_minus(&mut self) {
         unimplemented!();
     }
 
-    fn handle_and(&mut self) {
+    fn hanle_and(&mut self) {
+        unimplemented!();
     }
 
     fn handle_or(&mut self) {
@@ -63,7 +82,7 @@ impl VM {
         match token {
             Token::Plus => self.handle_plus(),
             Token::Minus => self.handle_minus(),
-            Token::And => self.handle_and(),
+            Token::And => self.hanle_and(),
             Token::Or => self.handle_or(),
             Token::Nor => self.handle_nor(),
             Token::Xor => self.handle_xor(),
@@ -81,7 +100,7 @@ mod tests {
     #[test]
     fn test_stack() {
         let mut vm = VM::new();
-        vm.run("1 and 2 + 3 and 4 + 5");
+        vm.run("1 & 2 + 3 & 4 + 5");
         assert_eq!(vm.result, 1);
     }
 }
