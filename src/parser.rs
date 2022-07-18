@@ -27,13 +27,12 @@ impl<'a> Parser {
         let next = scanner.next();
         let mut lhs = match next {
             //next should be a number or a left paren
-            Token::DecimalNumber(_) | Token::BinaryNumber(_) | Token::HexNumber(_) => /*S::Atom(next)*/ vec![next],
+            Token::DecimalNumber(_) | Token::BinaryNumber(_) | Token::HexNumber(_) => vec![next],
             Token::LeftParen => {
                 let lhs = self.parser_worker(scanner, 0);
-                assert_eq!(scanner.peek(), Token::RightParen);
+                assert_eq!(scanner.next(), Token::RightParen);
                 lhs
             },
-            //currently only a Minus Token is allowed as prefix
             Token::TwosComplement | Token::Bang => {
                 let ((), r_bp) = self.prefix_binding_power(&next);
                 let mut rhs = self.parser_worker(scanner, r_bp);
@@ -47,7 +46,7 @@ impl<'a> Parser {
             let op = match scanner.peek() {
                 eof if eof == Token::Eof => break,
                 operator if operator.is_operator() => operator,
-                rest => panic!("bad token >>> {:?}", rest),
+                err => panic!("bad token >>> {:?}", err),
             };
             //now compute the binding power of the just fetched operator
             if let Some((l_bp, r_bp)) = self.infix_binding_power(&op) {

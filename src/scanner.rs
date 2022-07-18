@@ -324,6 +324,8 @@ impl Token {
             | Token::ShiftRight
             | Token::Bang
             | Token::TwosComplement
+            | Token::LeftParen
+            | Token::RightParen
             | Token::Mult => true,
             _ => false,
         }
