@@ -23,3 +23,9 @@ Currently the following operations are supported:
 - ! for negation (1's complement)
 - ~ for 2's complement
 - parens for nested expressions
+
+## Grammar
+The accepted language of the calculator is:
+```
+
+``

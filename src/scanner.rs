@@ -199,6 +199,7 @@ impl<'a> Scanner<'a> {
                     }
                 }
                 State::ExpectBase => match self.buffer.next() {
+                    Some(ch) => println!("ch is: {:?}", ch),
                     Some('b') => state = State::BinaryNumber,
                     Some('x') => state = State::HexNumber,
                     _ => {
@@ -588,5 +589,11 @@ mod tests {
         assert_eq!(sc.next(), Token::DecimalNumber(5));
         assert_eq!(sc.next(), Token::Mult);
         assert_eq!(sc.next(), Token::DecimalNumber(3));
+    }
+
+    #[test]
+    fn test_zero_decimal() {
+        let mut sc = Scanner::new("0");
+        assert_eq!(sc.next(), Token::DecimalNumber(0));
     }
 }

@@ -125,4 +125,10 @@ mod tests {
         let mut vm = VM::new();
         assert_eq!((5&5)+(15&7), vm.run("(5 & 5)+(15 and 7)"));
     }
+
+    #[test]
+    fn test_zeros() {
+        let mut vm = VM::new();
+        assert_eq!(0, vm.run("0"));
+    }
 }
