@@ -7,22 +7,28 @@ use vm::VM;
 use editor::*;
 
 fn main() {
-
+    let mut vm = VM::new();
     let args: Vec<_> = std::env::args().collect();
     if let Some(file_name) = args.get(1) {
         let file_content = std::fs::read_to_string(file_name).unwrap();
-    }
-    let mut vm = VM::new();
-
-    // `()` can be used when n,o completer is required
-    let mut editor = Editor::new();
-    loop {
-        match editor.read_line() {
-            Ok(line) => {
-                let result = vm.run(&line);
-                println!("{}", result);
+        let result = vm.run(&file_content);
+        println!("result: {:?}", result);
+    } else {
+        let editor = Editor::new();
+        loop {
+            match editor.read_line() {
+                Ok(line) if line == "exit" || line == "quit" => {
+                    break;
+                }
+                Ok(line) => {
+                    let result = vm.run(&line);
+                    println!("{}", &result);
+                    println!("0x{:x}", &result);
+                    println!("0b{:b}", &result);
+                }
+                err => panic!("{:?}", err),
             }
-            err => panic!("{:?}", err),
         }
     }
+
 }

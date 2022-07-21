@@ -9,7 +9,7 @@ pub struct Scanner<'a> {
 
 const EOF_CHAR: char = '\0';
 
-#[derive(Debug, PartialEq, Copy, Clone)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Token {
     //single-character Tokens
     LeftParen,
@@ -36,7 +36,7 @@ pub enum Token {
     Xor,
     Nor,
 
-    Error(usize, usize),
+    Error(usize, usize, String),
     KeywordNotFound,
     Eof,
 }
@@ -137,7 +137,7 @@ impl<'a> Scanner<'a> {
                         _ => {
                             let start = self.initial_len - token_start;
                             let token_len = self.initial_len - self.buffer.as_str().len();
-                            result_token = Token::Error(start, token_len);
+                            result_token = Token::Error(start, token_len, self.lookup[start..token_len].to_string());
                             break;
                         }
                     }
@@ -168,7 +168,7 @@ impl<'a> Scanner<'a> {
                     _ => {
                         let start = self.initial_len - token_start;
                         let token_len = self.initial_len - self.buffer.as_str().len();
-                        result_token = Token::Error(start, token_len);
+                        result_token = Token::Error(start, token_len, self.lookup[start..token_len].to_string());
                         break;
                     }
                 },
@@ -193,19 +193,18 @@ impl<'a> Scanner<'a> {
                         _ => {
                             let start = self.initial_len - token_start;
                             let token_len = self.initial_len - self.buffer.as_str().len();
-                            result_token = Token::Error(start, token_len);
+                            result_token = Token::Error(start, token_len, self.lookup[start..token_len].to_string());
                             break;
                         }
                     }
                 }
                 State::ExpectBase => match self.buffer.next() {
-                    Some(ch) => println!("ch is: {:?}", ch),
                     Some('b') => state = State::BinaryNumber,
                     Some('x') => state = State::HexNumber,
                     _ => {
                         let start = self.initial_len - token_start;
                         let token_len = self.initial_len - self.buffer.as_str().len();
-                        result_token = Token::Error(start, token_len);
+                        result_token = Token::Error(start, token_len, self.lookup[start..token_len].to_string());
                         break;
                     }
                 },
@@ -231,7 +230,7 @@ impl<'a> Scanner<'a> {
                     _ => {
                         let start = self.initial_len - token_start;
                         let token_len = self.initial_len - self.buffer.as_str().len();
-                        result_token = Token::Error(start, token_len);
+                        result_token = Token::Error(start, token_len, self.lookup[start..token_len].to_string());
                         break;
                     }
                 },
@@ -257,7 +256,7 @@ impl<'a> Scanner<'a> {
                     _ => {
                         let start = self.initial_len - token_start;
                         let token_len = self.initial_len - self.buffer.as_str().len();
-                        result_token = Token::Error(start, token_len);
+                        result_token = Token::Error(start, token_len, self.lookup[start..token_len].to_string());
                         break;
                     }
                 },
@@ -283,7 +282,7 @@ impl<'a> Scanner<'a> {
                     _ => {
                         let start = self.initial_len - token_start;
                         let token_len = self.initial_len - self.buffer.as_str().len();
-                        result_token = Token::Error(start, token_len);
+                        result_token = Token::Error(start, token_len, self.lookup[start..token_len].to_string());
                         break;
                     }
                 },

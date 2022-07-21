@@ -6,14 +6,12 @@ use crate::scanner::{Scanner, Token};
 #[derive(Clone)]
 pub struct Parser {
     buffer: String,
-    res: Vec<Token>,
 }
 
 impl<'a> Parser {
     pub fn new(input: &'a str) -> Self {
         Self {
             buffer: input.to_string(),
-            res: Vec::new(),
         }
     }
 
@@ -39,7 +37,7 @@ impl<'a> Parser {
                 rhs.append(&mut vec![next]);
                 rhs
             },
-            _ => panic!("bad token: {:?}", &next),
+            _ => panic!("bad token >>> {:?} <<<", &next),
         };
 
         loop {

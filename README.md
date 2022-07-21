@@ -27,5 +27,9 @@ Currently the following operations are supported:
 ## Grammar
 The accepted language of the calculator is:
 ```
+primary -> NUMBER | "(" expression ")" | epsilon
+unary   -> ( "-" | "!" | "~" ) unary | primary
+factor  -> unary (( "*" | "%" | << | >>) unary)*
 
-``
+
+```

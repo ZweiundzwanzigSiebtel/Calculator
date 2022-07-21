@@ -45,7 +45,7 @@ impl VM {
     fn apply_operator(&mut self, operator: &Token, rhs: u64, lhs: u64) -> u64 {
         match operator {
             Token::Plus => lhs + rhs,
-            Token::Minus => lhs - rhs,
+            Token::Minus => lhs.wrapping_sub(rhs),
             Token::And => lhs & rhs,
             Token::Or => lhs | rhs,
             Token::Nor => !(lhs | rhs),
