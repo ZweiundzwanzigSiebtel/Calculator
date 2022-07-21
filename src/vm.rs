@@ -6,6 +6,7 @@ pub struct VM {
     parse_expression: Vec<Token>,
     stack: Vec<u64>,
     result: u64,
+    previous_result: Option<u64>,
 }
 
 impl VM {
@@ -14,6 +15,7 @@ impl VM {
             parse_expression: Vec::new(),
             stack: Vec::new(),
             result: 0,
+            previous_result: None,
         }
     }
 
@@ -39,7 +41,9 @@ impl VM {
 
             }
         }
-        self.stack.pop().unwrap()
+        self.result = self.stack.pop().unwrap();
+        self.previous_result = Some(self.result);
+        self.result
     }
 
     fn apply_operator(&mut self, operator: &Token, rhs: u64, lhs: u64) -> u64 {

@@ -20,6 +20,15 @@ fn main() {
                 Ok(line) if line == "exit" || line == "quit" => {
                     break;
                 }
+                Ok(line) if line == "copy bin" => {
+                    //TODO vm.result.as_bin() to clipboard;
+                }
+                Ok(line) if line == "copy dec" => {
+                    //TODO vm.result.as_dec() to clipboard;
+                }
+                Ok(line) if line == "copy hex" => {
+                    //TODO vm.result.as_hex() to clipboard;
+                }
                 Ok(line) => {
                     let result = vm.run(&line);
                     println!("{}", &result);
