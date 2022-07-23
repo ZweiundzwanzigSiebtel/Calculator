@@ -4,9 +4,9 @@ use crate::parser::Parser;
 #[derive(Debug, Clone)]
 pub struct VM {
     parse_expression: Vec<Token>,
-    stack: Vec<u64>,
-    result: u64,
-    previous_result: Option<u64>,
+    stack: Vec<i64>,
+    result: i64,
+    previous_result: Option<i64>,
 }
 
 impl VM {
@@ -19,7 +19,7 @@ impl VM {
         }
     }
 
-    pub fn run(&mut self, input: &str) -> u64 {
+    pub fn run(&mut self, input: &str) -> i64 {
         let mut parser = Parser::new(&input);
         self.parse_expression.append(&mut parser.parse());
         for item in &self.parse_expression {
@@ -46,10 +46,10 @@ impl VM {
         self.result
     }
 
-    fn apply_operator(&mut self, operator: &Token, rhs: u64, lhs: u64) -> u64 {
+    fn apply_operator(&mut self, operator: &Token, rhs: i64, lhs: i64) -> i64 {
         match operator {
             Token::Plus => lhs + rhs,
-            Token::Minus => lhs.wrapping_sub(rhs),
+            Token::Minus => lhs - rhs,
             Token::And => lhs & rhs,
             Token::Or => lhs | rhs,
             Token::Nor => !(lhs | rhs),
@@ -109,13 +109,13 @@ mod tests {
     #[test]
     fn test_unary() {
         let mut vm = VM::new();
-        assert_eq!(!1_u64, vm.run("!1"));
+        assert_eq!(!1_i64, vm.run("!1"));
     }
 
     #[test]
     fn test_twos_complement() {
         let mut vm = VM::new();
-        assert_eq!(!(1_u64)+1, vm.run("~1"));
+        assert_eq!(!(1_i64)+1, vm.run("~1"));
     }
 
     #[test]

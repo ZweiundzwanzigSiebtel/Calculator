@@ -5,6 +5,16 @@ pub enum Base {
     Hex
 }
 
+impl Base {
+    pub fn get_base_numeric(&self) -> i64 {
+        match self {
+            Base::Bin => 2,
+            Base::Dec => 10,
+            Base::Hex => 16,
+        }
+    }
+}
+
 //pub fn dec_to_base(dec: u64, base: Base) -> u64 {
 //    match base {
 //        Base::Bin => to_bin(dec),
