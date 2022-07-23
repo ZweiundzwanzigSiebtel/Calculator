@@ -37,7 +37,7 @@ impl<'a> Parser {
                 rhs.append(&mut vec![next]);
                 rhs
             },
-            _ => panic!("bad token >>> {:?} <<<", &next),
+            _ => panic!("bad token {:?}", &next),
         };
 
         loop {
