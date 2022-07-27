@@ -132,11 +132,10 @@ impl<'a> Scanner<'a> {
                     Some('>') => {
                         return Token::ShiftRight;
                     }
-                    None => {
-                        return Token::ShiftRight;
-                    }
                     _ => {
-                        return Token::ShiftRight;
+                        let start = self.initial_len - token_start;
+                        let token_len = self.initial_len - self.buffer.as_str().len();
+                        return Token::Error(start, token_len, self.lookup[start..token_len].to_string());
                     }
                 },
                 State::ExpectShiftLeft => match self.buffer.next() {
