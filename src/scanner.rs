@@ -1,10 +1,9 @@
 use std::str::Chars;
-use crate::utils::Base;
 
 #[derive(Clone)]
 pub struct Scanner<'a> {
     buffer: Chars<'a>,
-    lookup: String,
+    lookup: &'a str,
     initial_len: usize,
 }
 
@@ -59,7 +58,7 @@ impl<'a> Scanner<'a> {
     pub fn new(input: &'a str) -> Self {
         Self {
             buffer: input.chars(),
-            lookup: input.to_string(), //is just a copy of the buffer, because the chars iterator consumes the values
+            lookup: input, //is just a copy of the buffer, because the chars iterator consumes the values
             initial_len: input.len(),
         }
     }
@@ -244,14 +243,14 @@ impl<'a> Scanner<'a> {
                         let start = self.initial_len - token_start;
                         let token_len = self.initial_len - self.buffer.as_str().len();
                         result_token =
-                            Token::BinaryNumber(str_to_dec(&self.lookup[start + 2..token_len], Base::Bin));
+                            Token::BinaryNumber(i64::from_str_radix(&self.lookup[start + 2..token_len], 2).unwrap());
                         break;
                     }
                     EOF_CHAR => {
                         let start = self.initial_len - token_start;
                         let token_len = self.initial_len - self.buffer.as_str().len();
                         result_token =
-                            Token::BinaryNumber(str_to_dec(&self.lookup[start + 2..token_len], Base::Bin));
+                            Token::BinaryNumber(i64::from_str_radix(&self.lookup[start + 2..token_len], 2).unwrap());
                         break;
                     }
                     _ => {
@@ -270,14 +269,14 @@ impl<'a> Scanner<'a> {
                         let start = self.initial_len - token_start;
                         let token_len = self.initial_len - self.buffer.as_str().len();
                         result_token =
-                            Token::HexNumber(str_to_dec(&self.lookup[start + 2..token_len], Base::Hex));
+                            Token::HexNumber(i64::from_str_radix(&self.lookup[start + 2..token_len], 16).unwrap());
                         break;
                     }
                     EOF_CHAR => {
                         let start = self.initial_len - token_start;
                         let token_len = self.initial_len - self.buffer.as_str().len();
                         result_token =
-                            Token::HexNumber(str_to_dec(&self.lookup[start + 2..token_len], Base::Hex));
+                            Token::HexNumber(i64::from_str_radix(&self.lookup[start + 2..token_len], 16).unwrap());
                         break;
                     }
                     _ => {
@@ -354,36 +353,6 @@ impl Token {
     }
 }
 
-/// calculates the decimal value of the input of base `base`.
-///
-/// # Example:
-/// assert_eq!(str_to_dec("1234", 10), 1234);
-/// assert_eq!(str_to_dec("1010", 2), 10);
-/// assert_eq!(str_to_dec("ff", 16), 255);
-fn str_to_dec(value: &str, base: Base) -> i64 {
-    let base = base.get_base_numeric();
-    let mut iter = value.chars();
-    let mut result: i64 = 0;
-    let max_pow = value.len();
-    for power in (0..max_pow).rev() {
-        if let Some(ch) = iter.next() {
-            match ch {
-                c @ '0'..='9' => {
-                    result += (c.to_digit(10).unwrap() as i64) * base.pow(power.try_into().unwrap())
-                }
-                'a' | 'A' => result += 10_i64 * base.pow(power.try_into().unwrap()),
-                'b' | 'B' => result += 11_i64 * base.pow(power.try_into().unwrap()),
-                'c' | 'C' => result += 12_i64 * base.pow(power.try_into().unwrap()),
-                'd' | 'D' => result += 13_i64 * base.pow(power.try_into().unwrap()),
-                'e' | 'E' => result += 14_i64 * base.pow(power.try_into().unwrap()),
-                'f' | 'F' => result += 15_i64 * base.pow(power.try_into().unwrap()),
-                _ => panic!("didn't expect that"),
-            }
-        }
-    }
-    result
-}
-
 fn is_delimiter(c: char) -> bool {
     matches!(
         c,
@@ -438,32 +407,6 @@ mod tests {
     }
 
     #[test]
-    fn test_string_to_hex() {
-        let value = "AA";
-        assert_eq!(str_to_dec(&value, Base::Hex), 170);
-        let v2 = "A0";
-        assert_eq!(str_to_dec(&v2, Base::Hex), 160);
-        let v3 = "0";
-        assert_eq!(str_to_dec(&v3, Base::Hex), 0);
-        let v4 = "FFFFFFFF";
-        assert_eq!(str_to_dec(&v4, Base::Hex), 4294967295);
-        let v5 = "C0FFE";
-        assert_eq!(str_to_dec(&v5, Base::Hex), 790526);
-        let v6 = "a0F3";
-        assert_eq!(str_to_dec(&v6, Base::Hex), 41203);
-        let v7 = "aaBBccDD";
-        assert_eq!(str_to_dec(&v7, Base::Hex), 2864434397);
-        let v8 = "0000";
-        assert_eq!(str_to_dec(&v8, Base::Hex), 0);
-    }
-
-    #[test]
-    fn test_bin_from_string() {
-        let value = "1010";
-        assert_eq!(str_to_dec(&value, Base::Bin), 10);
-    }
-
-    #[test]
     fn test_peek_char_behaviour() {
         let mut sc = Scanner::new("(12 + 12)");
         assert_eq!(sc.next(), Token::LeftParen);
@@ -503,19 +446,19 @@ mod tests {
     #[test]
     fn test_dec_number() {
         let mut sc = Scanner::new("1234");
-        assert_eq!(sc.next(), Token::DecimalNumber(str_to_dec("1234", Base::Dec)));
+        assert_eq!(sc.next(), Token::DecimalNumber(i64::from_str_radix(&"1234", 10).unwrap()));
     }
 
     #[test]
     fn test_hex_number() {
         let mut sc = Scanner::new("0x1234");
-        assert_eq!(sc.next(), Token::HexNumber(str_to_dec("1234", Base::Hex)));
+        assert_eq!(sc.next(), Token::HexNumber(i64::from_str_radix("1234", 16).unwrap()));
     }
 
     #[test]
     fn test_bin_number() {
         let mut sc = Scanner::new("0b1010");
-        assert_eq!(sc.next(), Token::BinaryNumber(str_to_dec("1010", Base::Bin)));
+        assert_eq!(sc.next(), Token::BinaryNumber(i64::from_str_radix("1010", 2).unwrap()));
     }
 
     #[test]
@@ -537,7 +480,7 @@ mod tests {
         let mut sc = Scanner::new(input);
         assert_eq!(sc.next(), Token::LeftParen);
         assert_eq!(sc.next(), Token::RightParen);
-        assert_eq!(sc.next(), Token::HexNumber(str_to_dec("1234", Base::Hex)));
+        assert_eq!(sc.next(), Token::HexNumber(i64::from_str_radix("1234", 16).unwrap()));
         assert_eq!(sc.next(), Token::ShiftLeft);
         assert_eq!(sc.next(), Token::DecimalNumber(10));
     }
@@ -547,15 +490,15 @@ mod tests {
         let input = "(0b1010 + 0xFF) and (2 OR 0b10) << 12";
         let mut sc = Scanner::new(input);
         assert_eq!(sc.next(), Token::LeftParen);
-        assert_eq!(sc.next(), Token::BinaryNumber(str_to_dec("1010", Base::Bin)));
+        assert_eq!(sc.next(), Token::BinaryNumber(i64::from_str_radix("1010", 2).unwrap()));
         assert_eq!(sc.next(), Token::Plus);
-        assert_eq!(sc.next(), Token::HexNumber(str_to_dec(&"ff", Base::Hex)));
+        assert_eq!(sc.next(), Token::HexNumber(i64::from_str_radix(&"ff", 16).unwrap()));
         assert_eq!(sc.next(), Token::RightParen);
         assert_eq!(sc.next(), Token::And);
         assert_eq!(sc.next(), Token::LeftParen);
         assert_eq!(sc.next(), Token::DecimalNumber(2));
         assert_eq!(sc.next(), Token::Or);
-        assert_eq!(sc.next(), Token::BinaryNumber(str_to_dec("10", Base::Bin)));
+        assert_eq!(sc.next(), Token::BinaryNumber(i64::from_str_radix("10", 2).unwrap()));
         assert_eq!(sc.next(), Token::RightParen);
         assert_eq!(sc.next(), Token::ShiftLeft);
         assert_eq!(sc.next(), Token::DecimalNumber(12));

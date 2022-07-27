@@ -4,14 +4,14 @@ use std::fmt;
 use crate::scanner::{Scanner, Token};
 
 #[derive(Clone)]
-pub struct Parser {
-    buffer: String,
+pub struct Parser<'a> {
+    buffer: &'a str,
 }
 
-impl<'a> Parser {
+impl<'a> Parser<'a> {
     pub fn new(input: &'a str) -> Self {
         Self {
-            buffer: input.to_string(),
+            buffer: input,
         }
     }
 
