@@ -28,3 +28,6 @@ Currently the following operations are supported:
 The calculator supports a few convenience commands.
 - exit/quit to quit the application (alternative press CTRL-C)
 - copy bin/dec/hex copies the result in the specified format to the systems clipboard
+
+## Example
+![demo](https://j.gifs.com/99mDpZ.gif)
