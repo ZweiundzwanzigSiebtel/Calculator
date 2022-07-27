@@ -421,29 +421,6 @@ fn is_delimiter(c: char) -> bool {
     )
 }
 
-//impl fmt::Display for Token {
-//    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-//        match self.typ {
-//            TokenType::Or => write!(f, "OR"),
-//            TokenType::And => write!(f, "AND"),
-//            TokenType::Xor => write!(f, "XOR"),
-//            TokenType::Nor => write!(f, "NOR"),
-//            TokenType::Eof => write!(f, "EOF"),
-//            TokenType::Plus => write!(f, "+"),
-//            TokenType::Minus => write!(f, "-"),
-//            TokenType::Error => write!(f, "Error"),
-//            TokenType::LeftParen => write!(f, "("),
-//            TokenType::RightParen => write!(f, ")"),
-//            TokenType::ShiftLeft => write!(f, "<<"),
-//            TokenType::ShiftRight => write!(f, ">>"),
-//            TokenType::DecimalNumber(_) => write!(f, "DecimalNumber"),
-//            TokenType::BinaryNumber(_) => write!(f, "BinaryNumber"),
-//            TokenType::HexNumber(_) => write!(f, "HexNumber"),
-//            TokenType::KeywordNotFound => write!(f, "KeywordNotFound"),
-//        }
-//    }
-//}
-
 #[cfg(test)]
 mod tests {
     use super::*;

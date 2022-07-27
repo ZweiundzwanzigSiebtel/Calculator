@@ -133,6 +133,14 @@ mod tests {
     #[test]
     fn test_zeros() {
         let mut vm = VM::new();
+        println!("vm runs on 0: {:?}", vm.run("0"));
         assert_eq!(0, vm.run("0"));
+    }
+
+    #[test]
+    fn test_negative() {
+        let mut vm = VM::new();
+        assert_eq!(1-2, vm.run("1-2"));
+        assert_eq!(-1*2, vm.run("-1*2"));
     }
 }

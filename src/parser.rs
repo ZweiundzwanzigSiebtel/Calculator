@@ -31,10 +31,13 @@ impl<'a> Parser {
                 assert_eq!(scanner.next(), Token::RightParen);
                 lhs
             },
-            Token::TwosComplement | Token::Bang => {
+            Token::TwosComplement | Token::Bang | Token::Minus => {
                 let ((), r_bp) = self.prefix_binding_power(&next);
                 let mut rhs = self.parser_worker(scanner, r_bp);
-                rhs.append(&mut vec![next]);
+                println!("rhs is: {:?}", &rhs);
+                //rhs.append(&mut vec![next.clone()]);
+                rhs.insert(0, next.clone());
+                println!("rhs is: {:?}", &rhs);
                 rhs
             },
             _ => panic!("bad token {:?}", &next),

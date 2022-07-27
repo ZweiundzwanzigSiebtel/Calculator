@@ -7,13 +7,14 @@ I use this tool a lot, but it has its limitations.
 
 - [x] from parser create AST then evaluate AST expression.
 - [ ] add better error handling. Add pre and postconditions!
-- [ ] binary, dec and hex output
-- [ ] support for binary operators XOR, NOR, AND, OR, << and >>.
+- [x] binary, dec and hex output
+- [x] support for binary operators XOR, NOR, AND, OR, << and >>.
 - [ ] config file (e.g. always show binary representation);
 
 ## Overview
 Currently the following operations are supported:
-- +/-/* the known arithmetic operators. Instead of negative values the result wraps
+- the basic 4 arithmetic operations
+- << and >> for shift left/right
 - &/and/AND for binary and
 - |/or/OR for binary or
 - ^/xor/XOR for binary xor
