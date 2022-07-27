@@ -20,6 +20,7 @@ pub enum Token {
     TwosComplement,
     Mult,
     Modulo,
+    PreviousResult,
 
     //more character Tokens
     ShiftLeft,
@@ -110,6 +111,9 @@ impl<'a> Scanner<'a> {
                         }
                         Some('%') => {
                             return Token::Modulo;
+                        }
+                        Some('_') => {
+                            return Token::PreviousResult;
                         }
                         Some('>') => state = State::ExpectShiftRight,
                         Some('<') => state = State::ExpectShiftLeft,

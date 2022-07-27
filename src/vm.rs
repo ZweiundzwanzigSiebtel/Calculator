@@ -25,6 +25,7 @@ impl VM {
         for item in &self.parse_expression {
             match item {
                 Token::BinaryNumber(x) | Token::DecimalNumber(x) | Token::HexNumber(x) => self.stack.push(*x),
+                Token::PreviousResult => self.stack.push(self.previous_result.expect("previous result")),
                 op if op.is_operator() => {
                     let result;
                     if op == &Token::Bang || op == &Token::TwosComplement {

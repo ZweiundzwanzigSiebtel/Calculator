@@ -25,7 +25,7 @@ impl<'a> Parser<'a> {
         let next = scanner.next();
         let mut lhs = match next {
             //next should be a number or a left paren
-            Token::DecimalNumber(_) | Token::BinaryNumber(_) | Token::HexNumber(_) => vec![next],
+            Token::DecimalNumber(_) | Token::BinaryNumber(_) | Token::HexNumber(_) | Token::PreviousResult => vec![next],
             Token::LeftParen => {
                 let lhs = self.parser_worker(scanner, 0);
                 assert_eq!(scanner.next(), Token::RightParen);
