@@ -2,7 +2,6 @@ mod scanner;
 mod parser;
 mod vm;
 mod editor;
-mod utils;
 
 use vm::VM;
 use editor::*;

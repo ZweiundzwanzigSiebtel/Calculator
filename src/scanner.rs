@@ -70,7 +70,6 @@ impl<'a> Scanner<'a> {
     /// assert_eq!(sc.next(), Token::DecimalNumber(37));```
     pub fn next(&mut self) -> Token {
         self.eat_while(char::is_whitespace);
-        let result_token;
         let mut state = State::Start;
 
         let token_start = self.buffer.as_str().len();
@@ -80,48 +79,37 @@ impl<'a> Scanner<'a> {
                     let ch = self.buffer.next();
                     match ch {
                         Some('(') => {
-                            result_token = Token::LeftParen;
-                            break;
+                            return Token::LeftParen;
                         }
                         Some(')') => {
-                            result_token = Token::RightParen;
-                            break;
+                            return Token::RightParen;
                         }
                         Some('+') => {
-                            result_token = Token::Plus;
-                            break;
+                            return Token::Plus;
                         }
                         Some('-') => {
-                            result_token = Token::Minus;
-                            break;
+                            return Token::Minus;
                         }
                         Some('&') => {
-                            result_token = Token::And;
-                            break;
+                            return Token::And;
                         }
                         Some('|') => {
-                            result_token = Token::Or;
-                            break;
+                            return Token::Or;
                         }
                         Some('^') => {
-                            result_token = Token::Xor;
-                            break;
+                            return Token::Xor;
                         }
                         Some('!') => {
-                            result_token = Token::Bang;
-                            break;
+                            return Token::Bang;
                         }
                         Some('~') => {
-                            result_token = Token::TwosComplement;
-                            break;
+                            return Token::TwosComplement;
                         }
                         Some('*') => {
-                            result_token = Token::Mult;
-                            break;
+                            return Token::Mult;
                         }
                         Some('%') => {
-                            result_token = Token::Modulo;
-                            break;
+                            return Token::Modulo;
                         }
                         Some('>') => state = State::ExpectShiftRight,
                         Some('<') => state = State::ExpectShiftLeft,
@@ -131,45 +119,37 @@ impl<'a> Scanner<'a> {
                             state = State::Keyword;
                         }
                         None => {
-                            result_token = Token::Eof;
-                            break;
+                            return Token::Eof;
                         }
                         _ => {
                             let start = self.initial_len - token_start;
                             let token_len = self.initial_len - self.buffer.as_str().len();
-                            result_token = Token::Error(start, token_len, self.lookup[start..token_len].to_string());
-                            break;
+                            return Token::Error(start, token_len, self.lookup[start..token_len].to_string());
                         }
                     }
                 }
                 State::ExpectShiftRight => match self.buffer.next() {
                     Some('>') => {
-                        result_token = Token::ShiftRight;
-                        break;
+                        return Token::ShiftRight;
                     }
                     None => {
-                        result_token = Token::ShiftRight;
-                        break;
+                        return Token::ShiftRight;
                     }
                     _ => {
-                        result_token = Token::ShiftRight;
-                        break;
+                        return Token::ShiftRight;
                     }
                 },
                 State::ExpectShiftLeft => match self.buffer.next() {
                     Some('<') => {
-                        result_token = Token::ShiftLeft;
-                        break;
+                        return Token::ShiftLeft;
                     }
                     None => {
-                        result_token = Token::ShiftLeft;
-                        break;
+                        return Token::ShiftLeft;
                     }
                     _ => {
                         let start = self.initial_len - token_start;
                         let token_len = self.initial_len - self.buffer.as_str().len();
-                        result_token = Token::Error(start, token_len, self.lookup[start..token_len].to_string());
-                        break;
+                        return Token::Error(start, token_len, self.lookup[start..token_len].to_string());
                     }
                 },
                 State::Keyword => {
@@ -181,20 +161,17 @@ impl<'a> Scanner<'a> {
                         ch if is_delimiter(ch) => {
                             let start = self.initial_len - token_start;
                             let token_len = self.initial_len - self.buffer.as_str().len();
-                            result_token = self.get_keyword(&self.clone().lookup[start..token_len]);
-                            break;
+                            return self.get_keyword(&self.clone().lookup[start..token_len]);
                         }
                         EOF_CHAR => {
                             let start = self.initial_len - token_start;
                             let token_len = self.initial_len - self.buffer.as_str().len();
-                            result_token = self.get_keyword(&self.clone().lookup[start..token_len]);
-                            break;
+                            return self.get_keyword(&self.clone().lookup[start..token_len]);
                         }
                         _ => {
                             let start = self.initial_len - token_start;
                             let token_len = self.initial_len - self.buffer.as_str().len();
-                            result_token = Token::Error(start, token_len, self.lookup[start..token_len].to_string());
-                            break;
+                            return Token::Error(start, token_len, self.lookup[start..token_len].to_string());
                         }
                     }
                 }
@@ -204,8 +181,7 @@ impl<'a> Scanner<'a> {
                     _ => {
                         let start = self.initial_len - token_start;
                         let token_len = self.initial_len - self.buffer.as_str().len();
-                        result_token = Token::Error(start, token_len, self.lookup[start..token_len].to_string());
-                        break;
+                        return Token::Error(start, token_len, self.lookup[start..token_len].to_string());
                     }
                 },
                 State::DecimalNumber => match self.peek_char() {
@@ -216,22 +192,19 @@ impl<'a> Scanner<'a> {
                     ch if is_delimiter(ch) => {
                         let start = self.initial_len - token_start;
                         let token_len = self.initial_len - self.buffer.as_str().len();
-                        result_token =
+                        return
                             Token::DecimalNumber(self.lookup[start..token_len].parse().unwrap());
-                        break;
                     }
                     EOF_CHAR => {
                         let start = self.initial_len - token_start;
                         let token_len = self.initial_len - self.buffer.as_str().len();
-                        result_token =
+                        return
                             Token::DecimalNumber(self.lookup[start..token_len].parse().unwrap());
-                        break;
                     }
                     _ => {
                         let start = self.initial_len - token_start;
                         let token_len = self.initial_len - self.buffer.as_str().len();
-                        result_token = Token::Error(start, token_len, self.lookup[start..token_len].to_string());
-                        break;
+                        return Token::Error(start, token_len, self.lookup[start..token_len].to_string());
                     }
                 },
                 State::BinaryNumber => match self.peek_char() {
@@ -242,22 +215,19 @@ impl<'a> Scanner<'a> {
                     ch if is_delimiter(ch) => {
                         let start = self.initial_len - token_start;
                         let token_len = self.initial_len - self.buffer.as_str().len();
-                        result_token =
+                        return
                             Token::BinaryNumber(i64::from_str_radix(&self.lookup[start + 2..token_len], 2).unwrap());
-                        break;
                     }
                     EOF_CHAR => {
                         let start = self.initial_len - token_start;
                         let token_len = self.initial_len - self.buffer.as_str().len();
-                        result_token =
+                        return
                             Token::BinaryNumber(i64::from_str_radix(&self.lookup[start + 2..token_len], 2).unwrap());
-                        break;
                     }
                     _ => {
                         let start = self.initial_len - token_start;
                         let token_len = self.initial_len - self.buffer.as_str().len();
-                        result_token = Token::Error(start, token_len, self.lookup[start..token_len].to_string());
-                        break;
+                        return Token::Error(start, token_len, self.lookup[start..token_len].to_string());
                     }
                 },
                 State::HexNumber => match self.peek_char() {
@@ -268,27 +238,23 @@ impl<'a> Scanner<'a> {
                     ch if is_delimiter(ch) => {
                         let start = self.initial_len - token_start;
                         let token_len = self.initial_len - self.buffer.as_str().len();
-                        result_token =
+                        return
                             Token::HexNumber(i64::from_str_radix(&self.lookup[start + 2..token_len], 16).unwrap());
-                        break;
                     }
                     EOF_CHAR => {
                         let start = self.initial_len - token_start;
                         let token_len = self.initial_len - self.buffer.as_str().len();
-                        result_token =
+                        return
                             Token::HexNumber(i64::from_str_radix(&self.lookup[start + 2..token_len], 16).unwrap());
-                        break;
                     }
                     _ => {
                         let start = self.initial_len - token_start;
                         let token_len = self.initial_len - self.buffer.as_str().len();
-                        result_token = Token::Error(start, token_len, self.lookup[start..token_len].to_string());
-                        break;
+                        return Token::Error(start, token_len, self.lookup[start..token_len].to_string());
                     }
                 },
             }
         }
-        result_token
     }
 
     pub fn peek(&mut self) -> Token {
