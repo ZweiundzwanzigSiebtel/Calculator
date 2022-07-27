@@ -8,7 +8,7 @@ impl Editor {
 
     pub fn read_line(&self) -> io::Result<String> {
         let mut buffer = String::new();
-        print!(">>> ");
+        print!(">> ");
         std::io::stdout().flush().unwrap();
         io::stdin().read_line(&mut buffer)?;
         
