@@ -60,7 +60,7 @@ impl VM {
             Token::Bang => !rhs,
             Token::TwosComplement => (!rhs) + 1,
             Token::Mult => lhs * rhs,
-            Token::Modulo => lhs % rhs,
+            Token::Modulo => lhs.rem_euclid(rhs),
             err => panic!("unexpected operator: {:?}", err),
         }
     }
