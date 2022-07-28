@@ -34,10 +34,7 @@ impl<'a> Parser<'a> {
             Token::TwosComplement | Token::Bang | Token::Minus => {
                 let ((), r_bp) = self.prefix_binding_power(&next);
                 let mut rhs = self.parser_worker(scanner, r_bp);
-                println!("rhs is: {:?}", &rhs);
-                //rhs.append(&mut vec![next.clone()]);
-                rhs.insert(0, next.clone());
-                println!("rhs is: {:?}", &rhs);
+                rhs.append(&mut vec![next.clone()]);
                 rhs
             },
             _ => panic!("bad token {:?}", &next),
